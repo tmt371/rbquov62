@@ -5,11 +5,14 @@
  * This service takes complex procedural logic out of the AppController.
  */
 export class WorkflowService {
-    constructor({ eventAggregator, stateService, uiService, quoteService }) {
+    constructor({ eventAggregator, stateService, uiService, quoteService, calculationService, productFactory, detailConfigView }) {
         this.eventAggregator = eventAggregator;
         this.stateService = stateService;
         this.uiService = uiService;
         this.quoteService = quoteService;
+        this.calculationService = calculationService;
+        this.productFactory = productFactory;
+        this.detailConfigView = detailConfigView;
         console.log("WorkflowService Initialized.");
     }
 
@@ -158,5 +161,35 @@ export class WorkflowService {
             },
             closeOnOverlayClick: false
         });
+    }
+
+    handleF1TabActivation() {
+        const { quoteData } = this.stateService.getState();
+        const productStrategy = this.productFactory.getProductStrategy(quoteData.currentProduct);
+        const { updatedQuoteData } = this.calculationService.calculateAndSum(quoteData, productStrategy);
+        
+        const currentState = this.stateService.getState();
+        this.stateService.updateState({ ...currentState, quoteData: updatedQuoteData });
+    }
+
+    handleF2TabActivation() {
+        const { quoteData } = this.stateService.getState();
+        const productStrategy = this.productFactory.getProductStrategy(quoteData.currentProduct);
+        const { updatedQuoteData } = this.calculationService.calculateAndSum(quoteData, productStrategy);
+        
+        const currentState = this.stateService.getState();
+        this.stateService.updateState({ ...currentState, quoteData: updatedQuoteData });
+        
+        this.detailConfigView.driveAccessoriesView.recalculateAllDriveAccessoryPrices();
+        this.detailConfigView.dualChainView._calculateAndStoreDualPrice();
+        
+        // Logic from _calculateF2Summary moved here
+        const { quoteData: newQuoteData, ui } = this.stateService.getState();
+        const summaryValues = this.calculationService.calculateF2Summary(newQuoteData, ui);
+        for (const key in summaryValues) {
+            this.uiService.setF2Value(key, summaryValues[key]);
+        }
+        
+        this.eventAggregator.publish('focusElement', { elementId: 'f2-b10-wifi-qty' });
     }
 }

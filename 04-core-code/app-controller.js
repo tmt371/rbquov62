@@ -130,12 +130,7 @@ export class AppController {
     }
 
     _handleF1TabActivation() {
-        const { quoteData } = this.stateService.getState();
-        const productStrategy = this.productFactory.getProductStrategy(quoteData.currentProduct);
-        const { updatedQuoteData } = this.calculationService.calculateAndSum(quoteData, productStrategy);
-        
-        const currentState = this.stateService.getState();
-        this.stateService.updateState({ ...currentState, quoteData: updatedQuoteData });
+        this.workflowService.handleF1TabActivation();
     }
 
     _handleF1DiscountChange({ percentage }) {
@@ -177,18 +172,7 @@ export class AppController {
     }
     
     _handleF2TabActivation() {
-        const { quoteData } = this.stateService.getState();
-        const productStrategy = this.productFactory.getProductStrategy(quoteData.currentProduct);
-        const { updatedQuoteData } = this.calculationService.calculateAndSum(quoteData, productStrategy);
-        
-        const currentState = this.stateService.getState();
-        this.stateService.updateState({ ...currentState, quoteData: updatedQuoteData });
-        
-        this.detailConfigView.driveAccessoriesView.recalculateAllDriveAccessoryPrices();
-        this.detailConfigView.dualChainView._calculateAndStoreDualPrice();
-        this._calculateF2Summary();
-        
-        this.eventAggregator.publish('focusElement', { elementId: 'f2-b10-wifi-qty' });
+        this.workflowService.handleF2TabActivation();
     }
 
     _calculateF2Summary() {

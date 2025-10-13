@@ -89,28 +89,7 @@ export class AppContext {
         });
         this.register('focusService', focusService);
 
-        const workflowService = new WorkflowService({
-            eventAggregator,
-            stateService,
-            uiService,
-            quoteService
-        });
-        this.register('workflowService', workflowService);
-
         const publishStateChangeCallback = () => eventAggregator.publish('stateChanged', this.get('appController')._getFullState());
-
-        const quickQuoteView = new QuickQuoteView({
-            quoteService,
-            calculationService,
-            focusService,
-            fileService,
-            uiService,
-            eventAggregator,
-            productFactory,
-            configManager,
-            publishStateChangeCallback
-        });
-        this.register('quickQuoteView', quickQuoteView);
 
         const k1LocationView = new K1LocationView({ quoteService, uiService, publishStateChangeCallback });
         const k2FabricView = new K2FabricView({ quoteService, uiService, eventAggregator, publishStateChangeCallback });
@@ -137,6 +116,30 @@ export class AppContext {
             driveAccessoriesView
         });
         this.register('detailConfigView', detailConfigView);
+        
+        const workflowService = new WorkflowService({
+            eventAggregator,
+            stateService,
+            uiService,
+            quoteService,
+            calculationService,
+            productFactory,
+            detailConfigView
+        });
+        this.register('workflowService', workflowService);
+
+        const quickQuoteView = new QuickQuoteView({
+            quoteService,
+            calculationService,
+            focusService,
+            fileService,
+            uiService,
+            eventAggregator,
+            productFactory,
+            configManager,
+            publishStateChangeCallback
+        });
+        this.register('quickQuoteView', quickQuoteView);
 
         const appController = new AppController({
             eventAggregator,
