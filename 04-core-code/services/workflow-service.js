@@ -192,12 +192,7 @@ export class WorkflowService {
         this.detailConfigView.driveAccessoriesView.recalculateAllDriveAccessoryPrices();
         this.detailConfigView.dualChainView._calculateAndStoreDualPrice();
         
-        // Logic from _calculateF2Summary moved here
-        const { quoteData: newQuoteData, ui } = this.stateService.getState();
-        const summaryValues = this.calculationService.calculateF2Summary(newQuoteData, ui);
-        for (const key in summaryValues) {
-            this.uiService.setF2Value(key, summaryValues[key]);
-        }
+        this._calculateF2Summary();
         
         this.eventAggregator.publish('focusElement', { elementId: 'f2-b10-wifi-qty' });
     }

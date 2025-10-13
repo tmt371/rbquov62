@@ -145,14 +145,9 @@ export class AppContext {
         const appController = new AppController({
             eventAggregator,
             stateService,
-            uiService,
-            quoteService,
-            fileService,
+            workflowService,
             quickQuoteView,
-            detailConfigView,
-            calculationService,
-            productFactory,
-            workflowService
+            detailConfigView
         });
         this.register('appController', appController);
     }

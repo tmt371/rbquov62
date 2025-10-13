@@ -1,7 +1,5 @@
 // File: 04-core-code/app-controller.js
 
-import { initialState } from './config/initial-state.js';
-
 const AUTOSAVE_STORAGE_KEY = 'quoteAutoSaveData';
 const AUTOSAVE_INTERVAL_MS = 60000;
 
@@ -43,7 +41,7 @@ export class AppController {
         this.eventAggregator.subscribe('userRequestedDeleteRow', () => delegate('handleDeleteRow'));
         this.eventAggregator.subscribe('userRequestedSave', () => delegate('handleSaveToFile'));
         this.eventAggregator.subscribe('userRequestedExportCSV', () => delegate('handleExportCSV'));
-        this.eventAggregator.subscribe('userRequestedReset', () => delegate('handleReset', initialState.ui));
+        this.eventAggregator.subscribe('userRequestedReset', () => delegate('handleReset'));
         this.eventAggregator.subscribe('userRequestedClearRow', () => delegate('handleClearRow'));
         this.eventAggregator.subscribe('userMovedActiveCell', (data) => delegate('handleMoveActiveCell', data));
         this.eventAggregator.subscribe('userRequestedCycleType', () => delegate('handleCycleType'));
