@@ -6,22 +6,12 @@ const AUTOSAVE_STORAGE_KEY = 'quoteAutoSaveData';
 const AUTOSAVE_INTERVAL_MS = 60000;
 
 export class AppController {
-    constructor({ eventAggregator, stateService, uiService, quoteService, fileService, quickQuoteView, detailConfigView, calculationService, productFactory, workflowService }) {
+    constructor({ eventAggregator, stateService, quickQuoteView, detailConfigView, workflowService }) {
         this.eventAggregator = eventAggregator;
-        this.stateService = stateService;
-        this.uiService = uiService;
-        this.quoteService = quoteService;
-        this.fileService = fileService;
+        this.stateService = stateService; // Still needed for _getFullState and _handleAutoSave
         this.quickQuoteView = quickQuoteView;
         this.detailConfigView = detailConfigView;
-        this.calculationService = calculationService;
-        this.productFactory = productFactory;
         this.workflowService = workflowService;
-
-        this.f2InputSequence = [
-            'f2-b10-wifi-qty', 'f2-b13-delivery-qty', 'f2-b14-install-qty',
-            'f2-b15-removal-qty', 'f2-b17-mul-times', 'f2-b18-discount'
-        ];
 
         this.autoSaveTimerId = null;
         console.log("AppController (Refactored with grouped subscriptions) Initialized.");
@@ -107,121 +97,35 @@ export class AppController {
     }
 
     _subscribeGlobalEvents() {
-        this.eventAggregator.subscribe('userNavigatedToDetailView', () => this._handleNavigationToDetailView());
-        this.eventAggregator.subscribe('userNavigatedToQuickQuoteView', () => this._handleNavigationToQuickQuoteView());
-        this.eventAggregator.subscribe('userSwitchedTab', (data) => this._handleTabSwitch(data));
-        this.eventAggregator.subscribe('userRequestedLoad', () => this._handleUserRequestedLoad());
-        this.eventAggregator.subscribe('userChoseLoadDirectly', () => this._handleLoadDirectly());
-        this.eventAggregator.subscribe('fileLoaded', (data) => this._handleFileLoad(data));
+        this.eventAggregator.subscribe('userNavigatedToDetailView', () => this.workflowService.handleNavigationToDetailView());
+        this.eventAggregator.subscribe('userNavigatedToQuickQuoteView', () => this.workflowService.handleNavigationToQuickQuoteView());
+        this.eventAggregator.subscribe('userSwitchedTab', (data) => this.workflowService.handleTabSwitch(data));
+        this.eventAggregator.subscribe('userRequestedLoad', () => this.workflowService.handleUserRequestedLoad());
+        this.eventAggregator.subscribe('userChoseLoadDirectly', () => this.workflowService.handleLoadDirectly());
+        this.eventAggregator.subscribe('fileLoaded', (data) => this.workflowService.handleFileLoad(data));
     }
 
     _subscribeF1Events() {
-        this.eventAggregator.subscribe('f1TabActivated', () => this._handleF1TabActivation());
-        this.eventAggregator.subscribe('f1DiscountChanged', (data) => this._handleF1DiscountChange(data));
-        this.eventAggregator.subscribe('userRequestedRemoteDistribution', () => this._handleRemoteDistributionRequest());
-        this.eventAggregator.subscribe('userRequestedDualDistribution', () => this._handleDualDistributionRequest());
+        this.eventAggregator.subscribe('f1TabActivated', () => this.workflowService.handleF1TabActivation());
+        this.eventAggregator.subscribe('f1DiscountChanged', (data) => this.workflowService.handleF1DiscountChange(data));
+        this.eventAggregator.subscribe('userRequestedRemoteDistribution', () => this.workflowService.handleRemoteDistribution());
+        this.eventAggregator.subscribe('userRequestedDualDistribution', () => this.workflowService.handleDualDistribution());
     }
 
     _subscribeF2Events() {
-        this.eventAggregator.subscribe('f2TabActivated', () => this._handleF2TabActivation());
-        this.eventAggregator.subscribe('f2ValueChanged', (data) => this._handleF2ValueChange(data));
-        this.eventAggregator.subscribe('f2InputEnterPressed', (data) => this._focusNextF2Input(data.id));
-        this.eventAggregator.subscribe('toggleFeeExclusion', (data) => this._handleToggleFeeExclusion(data));
-    }
-
-    _handleF1TabActivation() {
-        this.workflowService.handleF1TabActivation();
-    }
-
-    _handleF1DiscountChange({ percentage }) {
-        this.uiService.setF1DiscountPercentage(percentage);
-        this.eventAggregator.publish('stateChanged', this.stateService.getState());
+        this.eventAggregator.subscribe('f2TabActivated', () => this.workflowService.handleF2TabActivation());
+        this.eventAggregator.subscribe('f2ValueChanged', (data) => this.workflowService.handleF2ValueChange(data));
+        this.eventAggregator.subscribe('f2InputEnterPressed', (data) => this.workflowService.focusNextF2Input(data.id));
+        this.eventAggregator.subscribe('toggleFeeExclusion', (data) => this.workflowService.handleToggleFeeExclusion(data));
     }
     
-    _handleToggleFeeExclusion({ feeType }) {
-        this.uiService.toggleF2FeeExclusion(feeType);
-        this._calculateF2Summary();
-    }
-
-    _handleF2ValueChange({ id, value }) {
-        const numericValue = value === '' ? null : parseFloat(value);
-        let keyToUpdate = null;
-
-        switch (id) {
-            case 'f2-b10-wifi-qty': keyToUpdate = 'wifiQty'; break;
-            case 'f2-b13-delivery-qty': keyToUpdate = 'deliveryQty'; break;
-            case 'f2-b14-install-qty': keyToUpdate = 'installQty'; break;
-            case 'f2-b15-removal-qty': keyToUpdate = 'removalQty'; break;
-            case 'f2-b17-mul-times': keyToUpdate = 'mulTimes'; break;
-            case 'f2-b18-discount': keyToUpdate = 'discount'; break;
-        }
-
-        if (keyToUpdate) {
-            this.uiService.setF2Value(keyToUpdate, numericValue);
-            this._calculateF2Summary();
-        }
-    }
-
-    _focusNextF2Input(currentId) {
-        const currentIndex = this.f2InputSequence.indexOf(currentId);
-        if (currentIndex > -1) {
-            const nextIndex = (currentIndex + 1) % this.f2InputSequence.length;
-            const nextElementId = this.f2InputSequence[nextIndex];
-            this.eventAggregator.publish('focusElement', { elementId: nextElementId });
-        }
-    }
-    
-    _handleF2TabActivation() {
-        this.workflowService.handleF2TabActivation();
-    }
-
-    _calculateF2Summary() {
-        const { quoteData, ui } = this.stateService.getState();
-        const summaryValues = this.calculationService.calculateF2Summary(quoteData, ui);
-
-        for (const key in summaryValues) {
-            this.uiService.setF2Value(key, summaryValues[key]);
-        }
-    }
-    
-    _handleNavigationToDetailView() {
-        this.workflowService.handleNavigationToDetailView();
-    }
-
-    _handleNavigationToQuickQuoteView() {
-        this.workflowService.handleNavigationToQuickQuoteView();
-    }
-
-    _handleTabSwitch({ tabId }) {
-        this.workflowService.handleTabSwitch({ tabId });
-    }
-
-    _handleUserRequestedLoad() {
-        this.workflowService.handleUserRequestedLoad();
-    }
-
-    _handleLoadDirectly() {
-        this.workflowService.handleLoadDirectly();
-    }
-
-    _handleFileLoad({ fileName, content }) {
-        this.workflowService.handleFileLoad({ fileName, content });
-    }
-    
+    // This is a special method used by AppContext to publish state, it needs access to stateService.
     _getFullState() {
         return this.stateService.getState();
     }
     
     publishInitialState() {
         this.eventAggregator.publish('stateChanged', this._getFullState());
-    }
-
-    _handleRemoteDistributionRequest() {
-        this.workflowService.handleRemoteDistribution();
-    }
-
-    _handleDualDistributionRequest() {
-        this.workflowService.handleDualDistribution();
     }
 
     _startAutoSave() {

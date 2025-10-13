@@ -16,6 +16,12 @@ export class WorkflowService {
         this.calculationService = calculationService;
         this.productFactory = productFactory;
         this.detailConfigView = detailConfigView;
+
+        this.f2InputSequence = [
+            'f2-b10-wifi-qty', 'f2-b13-delivery-qty', 'f2-b14-install-qty',
+            'f2-b15-removal-qty', 'f2-b17-mul-times', 'f2-b18-discount'
+        ];
+        
         console.log("WorkflowService Initialized.");
     }
 
@@ -240,6 +246,53 @@ export class WorkflowService {
             this.eventAggregator.publish('showNotification', { message: result.message });
         } else {
             this.eventAggregator.publish('showNotification', { message: result.message, type: 'error' });
+        }
+    }
+
+    handleF1DiscountChange({ percentage }) {
+        this.uiService.setF1DiscountPercentage(percentage);
+        this.eventAggregator.publish('stateChanged', this.stateService.getState());
+    }
+
+    handleToggleFeeExclusion({ feeType }) {
+        this.uiService.toggleF2FeeExclusion(feeType);
+        this._calculateF2Summary();
+    }
+
+    handleF2ValueChange({ id, value }) {
+        const numericValue = value === '' ? null : parseFloat(value);
+        let keyToUpdate = null;
+
+        switch (id) {
+            case 'f2-b10-wifi-qty': keyToUpdate = 'wifiQty'; break;
+            case 'f2-b13-delivery-qty': keyToUpdate = 'deliveryQty'; break;
+            case 'f2-b14-install-qty': keyToUpdate = 'installQty'; break;
+            case 'f2-b15-removal-qty': keyToUpdate = 'removalQty'; break;
+            case 'f2-b17-mul-times': keyToUpdate = 'mulTimes'; break;
+            case 'f2-b18-discount': keyToUpdate = 'discount'; break;
+        }
+
+        if (keyToUpdate) {
+            this.uiService.setF2Value(keyToUpdate, numericValue);
+            this._calculateF2Summary();
+        }
+    }
+
+    focusNextF2Input(currentId) {
+        const currentIndex = this.f2InputSequence.indexOf(currentId);
+        if (currentIndex > -1) {
+            const nextIndex = (currentIndex + 1) % this.f2InputSequence.length;
+            const nextElementId = this.f2InputSequence[nextIndex];
+            this.eventAggregator.publish('focusElement', { elementId: nextElementId });
+        }
+    }
+
+    _calculateF2Summary() {
+        const { quoteData, ui } = this.stateService.getState();
+        const summaryValues = this.calculationService.calculateF2Summary(quoteData, ui);
+
+        for (const key in summaryValues) {
+            this.uiService.setF2Value(key, summaryValues[key]);
         }
     }
 }
