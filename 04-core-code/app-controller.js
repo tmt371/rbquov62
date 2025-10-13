@@ -185,50 +185,27 @@ export class AppController {
     }
     
     _handleNavigationToDetailView() {
-        const { ui } = this.stateService.getState();
-        if (ui.currentView === 'QUICK_QUOTE') {
-            this.uiService.setCurrentView('DETAIL_CONFIG');
-            this.detailConfigView.activateTab('k1-tab'); 
-        } else {
-            this.uiService.setCurrentView('QUICK_QUOTE');
-            this.uiService.setVisibleColumns(initialState.ui.visibleColumns);
-        }
+        this.workflowService.handleNavigationToDetailView();
     }
 
     _handleNavigationToQuickQuoteView() {
-        this.uiService.setCurrentView('QUICK_QUOTE');
-        this.uiService.setVisibleColumns(initialState.ui.visibleColumns);
+        this.workflowService.handleNavigationToQuickQuoteView();
     }
 
     _handleTabSwitch({ tabId }) {
-        this.detailConfigView.activateTab(tabId);
+        this.workflowService.handleTabSwitch({ tabId });
     }
 
     _handleUserRequestedLoad() {
-        if (this.quoteService.hasData()) {
-            this.eventAggregator.publish('showLoadConfirmationDialog');
-        } else {
-            this.eventAggregator.publish('triggerFileLoad');
-        }
+        this.workflowService.handleUserRequestedLoad();
     }
 
     _handleLoadDirectly() {
-        this.eventAggregator.publish('triggerFileLoad');
+        this.workflowService.handleLoadDirectly();
     }
 
     _handleFileLoad({ fileName, content }) {
-        const result = this.fileService.parseFileContent(fileName, content);
-        if (result.success) {
-            const currentState = this.stateService.getState();
-            this.stateService.updateState({
-                ...currentState,
-                quoteData: result.data,
-                ui: { ...initialState.ui, isSumOutdated: true }
-            });
-            this.eventAggregator.publish('showNotification', { message: result.message });
-        } else {
-            this.eventAggregator.publish('showNotification', { message: result.message, type: 'error' });
-        }
+        this.workflowService.handleFileLoad({ fileName, content });
     }
     
     _getFullState() {

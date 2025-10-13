@@ -1,15 +1,18 @@
 // File: 04-core-code/services/workflow-service.js
 
+import { initialState } from '../config/initial-state.js';
+
 /**
  * @fileoverview A dedicated service for coordinating complex, multi-step user workflows.
  * This service takes complex procedural logic out of the AppController.
  */
 export class WorkflowService {
-    constructor({ eventAggregator, stateService, uiService, quoteService, calculationService, productFactory, detailConfigView }) {
+    constructor({ eventAggregator, stateService, uiService, quoteService, fileService, calculationService, productFactory, detailConfigView }) {
         this.eventAggregator = eventAggregator;
         this.stateService = stateService;
         this.uiService = uiService;
         this.quoteService = quoteService;
+        this.fileService = fileService;
         this.calculationService = calculationService;
         this.productFactory = productFactory;
         this.detailConfigView = detailConfigView;
@@ -191,5 +194,52 @@ export class WorkflowService {
         }
         
         this.eventAggregator.publish('focusElement', { elementId: 'f2-b10-wifi-qty' });
+    }
+
+    handleNavigationToDetailView() {
+        const { ui } = this.stateService.getState();
+        if (ui.currentView === 'QUICK_QUOTE') {
+            this.uiService.setCurrentView('DETAIL_CONFIG');
+            this.detailConfigView.activateTab('k1-tab'); 
+        } else {
+            this.uiService.setCurrentView('QUICK_QUOTE');
+            this.uiService.setVisibleColumns(initialState.ui.visibleColumns);
+        }
+    }
+
+    handleNavigationToQuickQuoteView() {
+        this.uiService.setCurrentView('QUICK_QUOTE');
+        this.uiService.setVisibleColumns(initialState.ui.visibleColumns);
+    }
+
+    handleTabSwitch({ tabId }) {
+        this.detailConfigView.activateTab(tabId);
+    }
+
+    handleUserRequestedLoad() {
+        if (this.quoteService.hasData()) {
+            this.eventAggregator.publish('showLoadConfirmationDialog');
+        } else {
+            this.eventAggregator.publish('triggerFileLoad');
+        }
+    }
+
+    handleLoadDirectly() {
+        this.eventAggregator.publish('triggerFileLoad');
+    }
+
+    handleFileLoad({ fileName, content }) {
+        const result = this.fileService.parseFileContent(fileName, content);
+        if (result.success) {
+            const currentState = this.stateService.getState();
+            this.stateService.updateState({
+                ...currentState,
+                quoteData: result.data,
+                ui: { ...initialState.ui, isSumOutdated: true }
+            });
+            this.eventAggregator.publish('showNotification', { message: result.message });
+        } else {
+            this.eventAggregator.publish('showNotification', { message: result.message, type: 'error' });
+        }
     }
 }

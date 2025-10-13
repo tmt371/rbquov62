@@ -122,6 +122,7 @@ export class AppContext {
             stateService,
             uiService,
             quoteService,
+            fileService,
             calculationService,
             productFactory,
             detailConfigView
