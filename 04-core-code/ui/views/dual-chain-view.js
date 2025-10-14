@@ -1,5 +1,7 @@
 // File: 04-core-code/ui/views/dual-chain-view.js
 
+import { EVENTS } from '../../config/constants.js';
+
 /**
  * @fileoverview A dedicated sub-view for handling all logic related to the Dual/Chain tab.
  */
@@ -80,7 +82,7 @@ export class DualChainView {
 
         // Rule 1: The total count must be an even number.
         if (dualCount > 0 && dualCount % 2 !== 0) {
-            this.eventAggregator.publish('showNotification', {
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, {
                 message: 'The total count of Dual Brackets (D) must be an even number. Please correct the selection.',
                 type: 'error'
             });
@@ -90,7 +92,7 @@ export class DualChainView {
         // Rule 2: The selected items must be in adjacent pairs.
         for (let i = 0; i < dualCount; i += 2) {
             if (selectedIndexes[i+1] !== selectedIndexes[i] + 1) {
-                this.eventAggregator.publish('showNotification', {
+                this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, {
                     message: 'Dual Brackets (D) must be set on adjacent items. Please check your selection.',
                     type: 'error'
                 });
@@ -110,7 +112,7 @@ export class DualChainView {
 
         const valueAsNumber = Number(value);
         if (value !== '' && (!Number.isInteger(valueAsNumber) || valueAsNumber <= 0)) {
-            this.eventAggregator.publish('showNotification', {
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, {
                 message: 'Only positive integers are allowed.',
                 type: 'error'
             });
@@ -130,8 +132,13 @@ export class DualChainView {
      */
     handleTableCellClick({ rowIndex, column }) {
         const { dualChainMode } = this.uiService.getState();
-        const item = this.quoteService.getItems()[rowIndex];
+        const items = this.quoteService.getItems();
+        const item = items[rowIndex];
         if (!item) return;
+
+        // Prevent interaction with the last, empty row.
+        const isLastRow = rowIndex === items.length - 1;
+        if (isLastRow) return;
 
         if (dualChainMode === 'dual' && column === 'dual') {
             const newValue = item.dual === 'D' ? '' : 'D';
