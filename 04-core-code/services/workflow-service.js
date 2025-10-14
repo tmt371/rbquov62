@@ -1,6 +1,7 @@
 // File: 04-core-code/services/workflow-service.js
 
 import { initialState } from '../config/initial-state.js';
+import { EVENTS } from '../config/constants.js';
 
 /**
  * @fileoverview A dedicated service for coordinating complex, multi-step user workflows.
@@ -32,7 +33,7 @@ export class WorkflowService {
         const initial1ch = ui.f1.remote_1ch_qty;
         const initial16ch = (ui.f1.remote_16ch_qty === null) ? totalRemoteCount - initial1ch : ui.f1.remote_16ch_qty;
 
-        this.eventAggregator.publish('showConfirmationDialog', {
+        this.eventAggregator.publish(EVENTS.SHOW_CONFIRMATION_DIALOG, {
             message: `Total remotes: ${totalRemoteCount}. Please distribute them.`,
             layout: [
                 [
@@ -52,12 +53,12 @@ export class WorkflowService {
                             const qty16ch = parseInt(document.getElementById('dialog-input-16ch').value, 10);
 
                             if (isNaN(qty1ch) || isNaN(qty16ch) || qty1ch < 0 || qty16ch < 0) {
-                                this.eventAggregator.publish('showNotification', { message: 'Quantities must be positive numbers.', type: 'error' });
+                                this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Quantities must be positive numbers.', type: 'error' });
                                 return false;
                             }
 
                             if (qty1ch + qty16ch !== totalRemoteCount) {
-                                this.eventAggregator.publish('showNotification', {
+                                this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, {
                                     message: `Total must equal ${totalRemoteCount}. Current total: ${qty1ch + qty16ch}.`,
                                     type: 'error'
                                 });
@@ -106,7 +107,7 @@ export class WorkflowService {
         const initialCombo = (ui.f1.dual_combo_qty === null) ? totalDualPairs : ui.f1.dual_combo_qty;
         const initialSlim = (ui.f1.dual_slim_qty === null) ? 0 : ui.f1.dual_slim_qty;
     
-        this.eventAggregator.publish('showConfirmationDialog', {
+        this.eventAggregator.publish(EVENTS.SHOW_CONFIRMATION_DIALOG, {
             message: `Total Dual pairs: ${totalDualPairs}. Please distribute them.`,
             layout: [
                 [
@@ -126,12 +127,12 @@ export class WorkflowService {
                             const qtySlim = parseInt(document.getElementById('dialog-input-slim').value, 10);
     
                             if (isNaN(qtyCombo) || isNaN(qtySlim) || qtyCombo < 0 || qtySlim < 0) {
-                                this.eventAggregator.publish('showNotification', { message: 'Quantities must be positive numbers.', type: 'error' });
+                                this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Quantities must be positive numbers.', type: 'error' });
                                 return false;
                             }
     
                             if (qtyCombo + qtySlim !== totalDualPairs) {
-                                this.eventAggregator.publish('showNotification', {
+                                this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, {
                                     message: `Total must equal ${totalDualPairs}. Current total: ${qtyCombo + qtySlim}.`,
                                     type: 'error'
                                 });
@@ -194,7 +195,7 @@ export class WorkflowService {
         
         this._calculateF2Summary();
         
-        this.eventAggregator.publish('focusElement', { elementId: 'f2-b10-wifi-qty' });
+        this.eventAggregator.publish(EVENTS.FOCUS_ELEMENT, { elementId: 'f2-b10-wifi-qty' });
     }
 
     handleNavigationToDetailView() {
@@ -219,14 +220,14 @@ export class WorkflowService {
 
     handleUserRequestedLoad() {
         if (this.quoteService.hasData()) {
-            this.eventAggregator.publish('showLoadConfirmationDialog');
+            this.eventAggregator.publish(EVENTS.SHOW_LOAD_CONFIRMATION_DIALOG);
         } else {
-            this.eventAggregator.publish('triggerFileLoad');
+            this.eventAggregator.publish(EVENTS.TRIGGER_FILE_LOAD);
         }
     }
 
     handleLoadDirectly() {
-        this.eventAggregator.publish('triggerFileLoad');
+        this.eventAggregator.publish(EVENTS.TRIGGER_FILE_LOAD);
     }
 
     handleFileLoad({ fileName, content }) {
@@ -238,15 +239,15 @@ export class WorkflowService {
                 quoteData: result.data,
                 ui: { ...initialState.ui, isSumOutdated: true }
             });
-            this.eventAggregator.publish('showNotification', { message: result.message });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: result.message });
         } else {
-            this.eventAggregator.publish('showNotification', { message: result.message, type: 'error' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: result.message, type: 'error' });
         }
     }
 
     handleF1DiscountChange({ percentage }) {
         this.uiService.setF1DiscountPercentage(percentage);
-        this.eventAggregator.publish('stateChanged', this.stateService.getState());
+        this.eventAggregator.publish(EVENTS.STATE_CHANGED, this.stateService.getState());
     }
 
     handleToggleFeeExclusion({ feeType }) {
@@ -278,7 +279,7 @@ export class WorkflowService {
         if (currentIndex > -1) {
             const nextIndex = (currentIndex + 1) % this.f2InputSequence.length;
             const nextElementId = this.f2InputSequence[nextIndex];
-            this.eventAggregator.publish('focusElement', { elementId: nextElementId });
+            this.eventAggregator.publish(EVENTS.FOCUS_ELEMENT, { elementId: nextElementId });
         }
     }
 

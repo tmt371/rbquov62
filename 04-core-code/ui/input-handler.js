@@ -1,6 +1,7 @@
 // File: 04-core-code/ui/input-handler.js
 
 import { LeftPanelInputHandler } from './left-panel-input-handler.js';
+import { EVENTS } from '../config/constants.js';
 
 export class InputHandler {
     constructor(eventAggregator) {
@@ -29,12 +30,12 @@ export class InputHandler {
             }
             
             let keyToPublish = null;
-            let eventToPublish = 'numericKeyPressed';
+            let eventToPublish = EVENTS.NUMERIC_KEY_PRESSED;
             const arrowKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
             if (arrowKeys.includes(event.key)) {
                 event.preventDefault();
                 const direction = event.key.replace('Arrow', '').toLowerCase();
-                this.eventAggregator.publish('userMovedActiveCell', { direction });
+                this.eventAggregator.publish(EVENTS.USER_MOVED_ACTIVE_CELL, { direction });
                 return;
             }
             if (event.key >= '0' && event.key <= '9') {
@@ -44,16 +45,16 @@ export class InputHandler {
                 switch (event.key.toLowerCase()) {
                     case 'w': keyToPublish = 'W'; break;
                     case 'h': keyToPublish = 'H'; break;
-                    case 't': this.eventAggregator.publish('userRequestedCycleType'); return;
-                    case '$': this.eventAggregator.publish('userRequestedCalculateAndSum'); return;
+                    case 't': this.eventAggregator.publish(EVENTS.USER_REQUESTED_CYCLE_TYPE); return;
+                    case '$': this.eventAggregator.publish(EVENTS.USER_REQUESTED_CALCULATE_AND_SUM); return;
                     case 'enter': keyToPublish = 'ENT'; event.preventDefault(); break;
                     case 'backspace': keyToPublish = 'DEL'; event.preventDefault(); break;
-                    case 'delete': eventToPublish = 'userRequestedClearRow'; break;
+                    case 'delete': eventToPublish = EVENTS.USER_REQUESTED_CLEAR_ROW; break;
                 }
             }
             if (keyToPublish !== null) {
                 this.eventAggregator.publish(eventToPublish, { key: keyToPublish });
-            } else if (eventToPublish === 'userRequestedClearRow') {
+            } else if (eventToPublish === EVENTS.USER_REQUESTED_CLEAR_ROW) {
                 this.eventAggregator.publish(eventToPublish);
             }
         });
@@ -68,16 +69,16 @@ export class InputHandler {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const content = e.target.result;
-                    this.eventAggregator.publish('fileLoaded', { fileName: file.name, content: content });
+                    this.eventAggregator.publish(EVENTS.FILE_LOADED, { fileName: file.name, content: content });
                 };
                 reader.onerror = () => {
-                    this.eventAggregator.publish('showNotification', { message: `Error reading file: ${reader.error}`, type: 'error' });
+                    this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: `Error reading file: ${reader.error}`, type: 'error' });
                 };
                 reader.readAsText(file);
                 event.target.value = '';
             });
         }
-        this.eventAggregator.subscribe('triggerFileLoad', () => {
+        this.eventAggregator.subscribe(EVENTS.TRIGGER_FILE_LOAD, () => {
             if (fileLoader) {
                 fileLoader.click();
             }
@@ -88,7 +89,7 @@ export class InputHandler {
         const numericToggle = document.getElementById('panel-toggle');
         if (numericToggle) {
             numericToggle.addEventListener('click', () => {
-                this.eventAggregator.publish('userToggledNumericKeyboard');
+                this.eventAggregator.publish(EVENTS.USER_TOGGLED_NUMERIC_KEYBOARD);
             });
         }
     }
@@ -104,8 +105,8 @@ export class InputHandler {
         };
 
         // These are buttons located outside the main grid (e.g., in the top control bar)
-        setupButton('key-reset', 'userRequestedReset');
-        setupButton('key-m-set', 'userRequestedMultiTypeSet');
+        setupButton('key-reset', EVENTS.USER_REQUESTED_RESET);
+        setupButton('key-m-set', EVENTS.USER_REQUESTED_MULTI_TYPE_SET);
     }
     
     _setupNumericKeyboard() {
@@ -140,7 +141,7 @@ export class InputHandler {
             const button = document.getElementById(id);
             if(button) {
                 if (id === 'key-type') {
-                    addLongPressSupport(button, 'typeButtonLongPressed', 'userRequestedCycleType', data);
+                    addLongPressSupport(button, EVENTS.TYPE_BUTTON_LONG_PRESSED, EVENTS.USER_REQUESTED_CYCLE_TYPE, data);
                 } else {
                     button.addEventListener('click', () => {
                         this.eventAggregator.publish(eventName, data);
@@ -150,28 +151,28 @@ export class InputHandler {
         };
 
         // Main grid keys
-        addButtonListener('key-7', 'numericKeyPressed', { key: '7' });
-        addButtonListener('key-8', 'numericKeyPressed', { key: '8' });
-        addButtonListener('key-9', 'numericKeyPressed', { key: '9' });
-        addButtonListener('key-4', 'numericKeyPressed', { key: '4' });
-        addButtonListener('key-5', 'numericKeyPressed', { key: '5' });
-        addButtonListener('key-6', 'numericKeyPressed', { key: '6' });
-        addButtonListener('key-1', 'numericKeyPressed', { key: '1' });
-        addButtonListener('key-2', 'numericKeyPressed', { key: '2' });
-        addButtonListener('key-3', 'numericKeyPressed', { key: '3' });
-        addButtonListener('key-0', 'numericKeyPressed', { key: '0' });
+        addButtonListener('key-7', EVENTS.NUMERIC_KEY_PRESSED, { key: '7' });
+        addButtonListener('key-8', EVENTS.NUMERIC_KEY_PRESSED, { key: '8' });
+        addButtonListener('key-9', EVENTS.NUMERIC_KEY_PRESSED, { key: '9' });
+        addButtonListener('key-4', EVENTS.NUMERIC_KEY_PRESSED, { key: '4' });
+        addButtonListener('key-5', EVENTS.NUMERIC_KEY_PRESSED, { key: '5' });
+        addButtonListener('key-6', EVENTS.NUMERIC_KEY_PRESSED, { key: '6' });
+        addButtonListener('key-1', EVENTS.NUMERIC_KEY_PRESSED, { key: '1' });
+        addButtonListener('key-2', EVENTS.NUMERIC_KEY_PRESSED, { key: '2' });
+        addButtonListener('key-3', EVENTS.NUMERIC_KEY_PRESSED, { key: '3' });
+        addButtonListener('key-0', EVENTS.NUMERIC_KEY_PRESSED, { key: '0' });
         
         // Function keys within the grid
-        addButtonListener('key-w', 'numericKeyPressed', { key: 'W' });
-        addButtonListener('key-h', 'numericKeyPressed', { key: 'H' });
-        addButtonListener('key-price', 'userRequestedCalculateAndSum');
-        addButtonListener('key-type', 'userRequestedCycleType');
-        addButtonListener('key-del', 'numericKeyPressed', { key: 'DEL' });
-        addButtonListener('key-enter', 'numericKeyPressed', { key: 'ENT' });
-        addButtonListener('key-clear', 'userRequestedClearRow');
+        addButtonListener('key-w', EVENTS.NUMERIC_KEY_PRESSED, { key: 'W' });
+        addButtonListener('key-h', EVENTS.NUMERIC_KEY_PRESSED, { key: 'H' });
+        addButtonListener('key-price', EVENTS.USER_REQUESTED_CALCULATE_AND_SUM);
+        addButtonListener('key-type', EVENTS.USER_REQUESTED_CYCLE_TYPE);
+        addButtonListener('key-del', EVENTS.NUMERIC_KEY_PRESSED, { key: 'DEL' });
+        addButtonListener('key-enter', EVENTS.NUMERIC_KEY_PRESSED, { key: 'ENT' });
+        addButtonListener('key-clear', EVENTS.USER_REQUESTED_CLEAR_ROW);
 
         // [NEW] Added listener for the new grid-based insert button
-        addButtonListener('key-ins-grid', 'userRequestedInsertRow');
+        addButtonListener('key-ins-grid', EVENTS.USER_REQUESTED_INSERT_ROW);
     }
 
     _setupTableInteraction() {
@@ -184,7 +185,7 @@ export class InputHandler {
                     this.longPressTimer = setTimeout(() => {
                         this.isLongPress = true;
                         const rowIndex = target.parentElement.dataset.rowIndex;
-                        this.eventAggregator.publish('typeCellLongPressed', { rowIndex: parseInt(rowIndex, 10) });
+                        this.eventAggregator.publish(EVENTS.TYPE_CELL_LONG_PRESSED, { rowIndex: parseInt(rowIndex, 10) });
                     }, this.pressThreshold);
                 }
             };
@@ -200,9 +201,9 @@ export class InputHandler {
                         if (column && rowIndex) {
                             const eventData = { rowIndex: parseInt(rowIndex, 10), column };
                             if (column === 'sequence') {
-                                this.eventAggregator.publish('sequenceCellClicked', eventData);
+                                this.eventAggregator.publish(EVENTS.SEQUENCE_CELL_CLICKED, eventData);
                             } else {
-                                this.eventAggregator.publish('tableCellClicked', eventData);
+                                this.eventAggregator.publish(EVENTS.TABLE_CELL_CLICKED, eventData);
                             }
                         }
                     }

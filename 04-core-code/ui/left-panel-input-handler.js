@@ -1,4 +1,6 @@
-// File: 04-core-code/left-panel-input-handler.js
+// File: 04-core-code/ui/left-panel-input-handler.js
+
+import { EVENTS } from '../config/constants.js';
 
 /**
  * @fileoverview A dedicated input handler for all user interactions within the Left Panel.
@@ -23,7 +25,7 @@ export class LeftPanelInputHandler {
         const leftPanelToggle = document.getElementById('left-panel-toggle');
         if (leftPanelToggle) {
             leftPanelToggle.addEventListener('click', () => {
-                this.eventAggregator.publish('userNavigatedToDetailView');
+                this.eventAggregator.publish(EVENTS.USER_NAVIGATED_TO_DETAIL_VIEW);
             });
         }
     }
@@ -34,7 +36,7 @@ export class LeftPanelInputHandler {
             tabContainer.addEventListener('click', (event) => {
                 const target = event.target.closest('.tab-button');
                 if (target && !target.disabled) {
-                    this.eventAggregator.publish('userSwitchedTab', { tabId: target.id });
+                    this.eventAggregator.publish(EVENTS.USER_SWITCHED_TAB, { tabId: target.id });
                 }
             });
         }
@@ -44,7 +46,7 @@ export class LeftPanelInputHandler {
         const locationButton = document.getElementById('btn-focus-location');
         if (locationButton) {
             locationButton.addEventListener('click', () => {
-                this.eventAggregator.publish('userRequestedFocusMode', { column: 'location' });
+                this.eventAggregator.publish(EVENTS.USER_REQUESTED_FOCUS_MODE, { column: 'location' });
             });
         }
 
@@ -53,7 +55,7 @@ export class LeftPanelInputHandler {
             locationInput.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter') {
                     event.preventDefault();
-                    this.eventAggregator.publish('locationInputEnterPressed', {
+                    this.eventAggregator.publish(EVENTS.LOCATION_INPUT_ENTER_PRESSED, {
                         value: event.target.value
                     });
                 }
@@ -65,19 +67,19 @@ export class LeftPanelInputHandler {
         const fabricButton = document.getElementById('btn-focus-fabric');
         if (fabricButton) {
             fabricButton.addEventListener('click', () => {
-                this.eventAggregator.publish('userRequestedFocusMode', { column: 'fabric' });
+                this.eventAggregator.publish(EVENTS.USER_REQUESTED_FOCUS_MODE, { column: 'fabric' });
             });
         }
         const lfButton = document.getElementById('btn-light-filter');
         if (lfButton) {
             lfButton.addEventListener('click', () => {
-                this.eventAggregator.publish('userRequestedLFEditMode');
+                this.eventAggregator.publish(EVENTS.USER_REQUESTED_LF_EDIT_MODE);
             });
         }
         const lfDelButton = document.getElementById('btn-lf-del');
         if (lfDelButton) {
             lfDelButton.addEventListener('click', () => {
-                this.eventAggregator.publish('userRequestedLFDeleteMode');
+                this.eventAggregator.publish(EVENTS.USER_REQUESTED_LF_DELETE_MODE);
             });
         }
 
@@ -87,7 +89,7 @@ export class LeftPanelInputHandler {
                 if (event.key === 'Enter' && event.target.matches('.panel-input')) {
                     event.preventDefault();
                     const input = event.target;
-                    this.eventAggregator.publish('panelInputEnterPressed', {
+                    this.eventAggregator.publish(EVENTS.PANEL_INPUT_ENTER_PRESSED, {
                         type: input.dataset.type,
                         field: input.dataset.field,
                         value: input.value
@@ -96,7 +98,7 @@ export class LeftPanelInputHandler {
             });
             batchTable.addEventListener('blur', (event) => {
                 if (event.target.matches('.panel-input')) {
-                    this.eventAggregator.publish('panelInputBlurred', {
+                    this.eventAggregator.publish(EVENTS.PANEL_INPUT_BLURRED, {
                         type: event.target.dataset.type,
                         field: event.target.dataset.field,
                         value: event.target.value
@@ -110,7 +112,7 @@ export class LeftPanelInputHandler {
         const editButton = document.getElementById('btn-k3-edit');
         if (editButton) {
             editButton.addEventListener('click', () => {
-                this.eventAggregator.publish('userToggledK3EditMode');
+                this.eventAggregator.publish(EVENTS.USER_TOGGLED_K3_EDIT_MODE);
             });
         }
 
@@ -118,7 +120,7 @@ export class LeftPanelInputHandler {
             const button = document.getElementById(buttonId);
             if (button) {
                 button.addEventListener('click', () => {
-                    this.eventAggregator.publish('userRequestedBatchCycle', { column });
+                    this.eventAggregator.publish(EVENTS.USER_REQUESTED_BATCH_CYCLE, { column });
                 });
             }
         };
@@ -132,7 +134,7 @@ export class LeftPanelInputHandler {
             const button = document.getElementById(buttonId);
             if (button) {
                 button.addEventListener('click', () => {
-                    this.eventAggregator.publish('dualChainModeChanged', { mode });
+                    this.eventAggregator.publish(EVENTS.DUAL_CHAIN_MODE_CHANGED, { mode });
                 });
             }
         };
@@ -144,7 +146,7 @@ export class LeftPanelInputHandler {
             k4Input.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter') {
                     event.preventDefault();
-                    this.eventAggregator.publish('chainEnterPressed', {
+                    this.eventAggregator.publish(EVENTS.CHAIN_ENTER_PRESSED, {
                         value: event.target.value
                     });
                 }
@@ -159,7 +161,7 @@ export class LeftPanelInputHandler {
                 // [REFACTOR] Removed special handling for the remote button.
                 // It now fires a standard 'driveModeChanged' event, same as other accessory buttons.
                 button.addEventListener('click', () => {
-                    this.eventAggregator.publish('driveModeChanged', { mode });
+                    this.eventAggregator.publish(EVENTS.DRIVE_MODE_CHANGED, { mode });
                 });
             }
         };
@@ -173,7 +175,7 @@ export class LeftPanelInputHandler {
             const button = document.getElementById(buttonId);
             if (button) {
                 button.addEventListener('click', () => {
-                    this.eventAggregator.publish('accessoryCounterChanged', { accessory, direction });
+                    this.eventAggregator.publish(EVENTS.ACCESSORY_COUNTER_CHANGED, { accessory, direction });
                 });
             }
         };

@@ -1,5 +1,7 @@
 // File: 04-core-code/ui/views/k2-fabric-view.js
 
+import { EVENTS } from '../../config/constants.js';
+
 /**
  * @fileoverview A dedicated sub-view for handling all logic related to the K2 (Fabric) tab.
  */
@@ -30,7 +32,7 @@ export class K2FabricView {
             );
 
             if (hasConflict) {
-                this.eventAggregator.publish('showConfirmationDialog', {
+                this.eventAggregator.publish(EVENTS.SHOW_CONFIRMATION_DIALOG, {
                     message: 'Data Conflict: Some items (B2, B3, B4) already have Light-Filter settings. Continuing with a batch edit will overwrite this data. How would you like to proceed?',
                     closeOnOverlayClick: false,
                     layout: [
@@ -122,14 +124,14 @@ export class K2FabricView {
                 // [REFACTORED] lfModifiedRowIndexes is now read from quoteData.
                 const { lfModifiedRowIndexes } = this.quoteService.getQuoteData().uiMetadata;
                 if (!lfModifiedRowIndexes.includes(rowIndex)) {
-                    this.eventAggregator.publish('showNotification', { message: 'Only items with a Light-Filter setting (pink background) can be selected for deletion.', type: 'error' });
+                    this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Only items with a Light-Filter setting (pink background) can be selected for deletion.', type: 'error' });
                     return;
                 }
             }
 
             const eligibleTypes = ['B2', 'B3', 'B4'];
             if (activeEditMode === 'K2_LF_SELECT' && !eligibleTypes.includes(item.fabricType)) {
-                this.eventAggregator.publish('showNotification', { message: 'Only items with TYPE "B2", "B3", or "B4" can be selected.', type: 'error' });
+                this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Only items with TYPE "B2", "B3", or "B4" can be selected.', type: 'error' });
                 return;
             }
             this.uiService.toggleLFSelection(rowIndex);
@@ -159,7 +161,7 @@ export class K2FabricView {
             this._exitAllK2Modes();
         } else {
             this.uiService.setActiveEditMode('K2_LF_SELECT');
-            this.eventAggregator.publish('showNotification', { message: 'Please select items with TYPE \'B2\', \'B3\', or \'B4\' to edit.' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Please select items with TYPE \'B2\', \'B3\', or \'B4\' to edit.' });
             this.publish();
         }
     }
@@ -173,12 +175,12 @@ export class K2FabricView {
                 this.quoteService.removeLFProperties(lfSelectedRowIndexes);
                 // [REFACTORED] Call moved from uiService to quoteService.
                 this.quoteService.removeLFModifiedRows(lfSelectedRowIndexes);
-                this.eventAggregator.publish('showNotification', { message: 'Light-Filter settings have been cleared.' });
+                this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Light-Filter settings have been cleared.' });
             }
             this._exitAllK2Modes();
         } else {
             this.uiService.setActiveEditMode('K2_LF_DELETE_SELECT');
-            this.eventAggregator.publish('showNotification', { message: 'Please select the roller blinds for which you want to cancel the Light-Filter fabric setting. After selection, click the LF-Del button again.' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Please select the roller blinds for which you want to cancel the Light-Filter fabric setting. After selection, click the LF-Del button again.' });
             this.publish();
         }
     }

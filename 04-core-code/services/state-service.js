@@ -1,5 +1,7 @@
 // File: 04-core-code/services/state-service.js
 
+import { EVENTS } from '../config/constants.js';
+
 /**
  * @fileoverview Service for managing the entire application state.
  * Acts as the single source of truth.
@@ -32,6 +34,6 @@ export class StateService {
     updateState(newState) {
         this._state = newState;
         // Publishing the new state directly, as getState() no longer deep copies.
-        this.eventAggregator.publish('_internalStateUpdated', this._state);
+        this.eventAggregator.publish(EVENTS.INTERNAL_STATE_UPDATED, this._state);
     }
 }

@@ -1,5 +1,7 @@
 // /04-core-code/ui/dialog-component.js
 
+import { EVENTS } from '../config/constants.js';
+
 /**
  * @fileoverview A generic, configurable component to manage confirmation dialogs.
  */
@@ -20,20 +22,20 @@ export class DialogComponent {
     }
 
     initialize() {
-        this.eventAggregator.subscribe('showLoadConfirmationDialog', () => {
+        this.eventAggregator.subscribe(EVENTS.SHOW_LOAD_CONFIRMATION_DIALOG, () => {
             this.show({
                 message: 'The current quote contains unsaved data. What would you like to do?',
                 layout: [
                     [
-                        { type: 'button', text: 'Save then Load', callback: () => this.eventAggregator.publish('userChoseSaveThenLoad'), colspan: 1 },
-                        { type: 'button', text: 'Load Directly', callback: () => this.eventAggregator.publish('userChoseLoadDirectly'), colspan: 1 },
+                        { type: 'button', text: 'Save then Load', callback: () => this.eventAggregator.publish(EVENTS.USER_CHOSE_SAVE_THEN_LOAD), colspan: 1 },
+                        { type: 'button', text: 'Load Directly', callback: () => this.eventAggregator.publish(EVENTS.USER_CHOSE_LOAD_DIRECTLY), colspan: 1 },
                         { type: 'button', text: 'Cancel', className: 'secondary', callback: () => {}, colspan: 1 }
                     ]
                 ]
             });
         });
 
-        this.eventAggregator.subscribe('showConfirmationDialog', (config) => this.show(config));
+        this.eventAggregator.subscribe(EVENTS.SHOW_CONFIRMATION_DIALOG, (config) => this.show(config));
 
         this.overlay.addEventListener('click', (event) => {
             if (event.target === this.overlay && this.closeOnOverlayClick) {

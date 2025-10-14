@@ -1,5 +1,8 @@
 // File: 04-core-code/app-controller.js
 
+import { initialState } from './config/initial-state.js';
+import { EVENTS } from './config/constants.js';
+
 const AUTOSAVE_STORAGE_KEY = 'quoteAutoSaveData';
 const AUTOSAVE_INTERVAL_MS = 60000;
 
@@ -26,8 +29,8 @@ export class AppController {
         // This is the core of the reactive state update.
         // Any service that updates the state via StateService will trigger this,
         // which in turn re-renders the UI.
-        this.eventAggregator.subscribe('_internalStateUpdated', (newState) => {
-            this.eventAggregator.publish('stateChanged', newState);
+        this.eventAggregator.subscribe(EVENTS.INTERNAL_STATE_UPDATED, (newState) => {
+            this.eventAggregator.publish(EVENTS.STATE_CHANGED, newState);
         });
 
         this._startAutoSave();
@@ -36,21 +39,21 @@ export class AppController {
     _subscribeQuickQuoteEvents() {
         const delegate = (handlerName, ...args) => this.quickQuoteView[handlerName](...args);
 
-        this.eventAggregator.subscribe('numericKeyPressed', (data) => delegate('handleNumericKeyPress', data));
-        this.eventAggregator.subscribe('userRequestedInsertRow', () => delegate('handleInsertRow'));
-        this.eventAggregator.subscribe('userRequestedDeleteRow', () => delegate('handleDeleteRow'));
-        this.eventAggregator.subscribe('userRequestedSave', () => delegate('handleSaveToFile'));
-        this.eventAggregator.subscribe('userRequestedExportCSV', () => delegate('handleExportCSV'));
-        this.eventAggregator.subscribe('userRequestedReset', () => delegate('handleReset'));
-        this.eventAggregator.subscribe('userRequestedClearRow', () => delegate('handleClearRow'));
-        this.eventAggregator.subscribe('userMovedActiveCell', (data) => delegate('handleMoveActiveCell', data));
-        this.eventAggregator.subscribe('userRequestedCycleType', () => delegate('handleCycleType'));
-        this.eventAggregator.subscribe('userRequestedCalculateAndSum', () => delegate('handleCalculateAndSum'));
-        this.eventAggregator.subscribe('userToggledMultiSelectMode', () => delegate('handleToggleMultiSelectMode'));
-        this.eventAggregator.subscribe('userChoseSaveThenLoad', () => delegate('handleSaveThenLoad'));
-        this.eventAggregator.subscribe('typeCellLongPressed', (data) => delegate('handleTypeCellLongPress', data));
-        this.eventAggregator.subscribe('typeButtonLongPressed', (data) => delegate('handleTypeButtonLongPress', data));
-        this.eventAggregator.subscribe('userRequestedMultiTypeSet', () => delegate('handleMultiTypeSet'));
+        this.eventAggregator.subscribe(EVENTS.NUMERIC_KEY_PRESSED, (data) => delegate('handleNumericKeyPress', data));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_INSERT_ROW, () => delegate('handleInsertRow'));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_DELETE_ROW, () => delegate('handleDeleteRow'));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_SAVE, () => delegate('handleSaveToFile'));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_EXPORT_CSV, () => delegate('handleExportCSV'));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_RESET, () => delegate('handleReset'));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_CLEAR_ROW, () => delegate('handleClearRow'));
+        this.eventAggregator.subscribe(EVENTS.USER_MOVED_ACTIVE_CELL, (data) => delegate('handleMoveActiveCell', data));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_CYCLE_TYPE, () => delegate('handleCycleType'));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_CALCULATE_AND_SUM, () => delegate('handleCalculateAndSum'));
+        this.eventAggregator.subscribe(EVENTS.USER_TOGGLED_MULTI_SELECT_MODE, () => delegate('handleToggleMultiSelectMode'));
+        this.eventAggregator.subscribe(EVENTS.USER_CHOSE_SAVE_THEN_LOAD, () => delegate('handleSaveThenLoad'));
+        this.eventAggregator.subscribe(EVENTS.TYPE_CELL_LONG_PRESSED, (data) => delegate('handleTypeCellLongPress', data));
+        this.eventAggregator.subscribe(EVENTS.TYPE_BUTTON_LONG_PRESSED, (data) => delegate('handleTypeButtonLongPress', data));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_MULTI_TYPE_SET, () => delegate('handleMultiTypeSet'));
     }
 
     _subscribeDetailViewEvents() {
@@ -61,7 +64,7 @@ export class AppController {
             }
         };
         
-        this.eventAggregator.subscribe('tableCellClicked', (data) => {
+        this.eventAggregator.subscribe(EVENTS.TABLE_CELL_CLICKED, (data) => {
             const { ui } = this.stateService.getState();
             if (ui.currentView === 'QUICK_QUOTE') {
                 this.quickQuoteView.handleTableCellClick(data);
@@ -69,7 +72,7 @@ export class AppController {
                 this.detailConfigView.handleTableCellClick(data);
             }
         });
-         this.eventAggregator.subscribe('sequenceCellClicked', (data) => {
+         this.eventAggregator.subscribe(EVENTS.SEQUENCE_CELL_CLICKED, (data) => {
             const { ui } = this.stateService.getState();
             if (ui.currentView === 'QUICK_QUOTE') {
                 this.quickQuoteView.handleSequenceCellClick(data);
@@ -79,42 +82,42 @@ export class AppController {
         });
 
         // Detail Config View Specific Events
-        this.eventAggregator.subscribe('userRequestedFocusMode', (data) => delegate('handleFocusModeRequest', data));
-        this.eventAggregator.subscribe('panelInputEnterPressed', (data) => delegate('handlePanelInputEnter', data));
-        this.eventAggregator.subscribe('panelInputBlurred', (data) => delegate('handlePanelInputBlur', data));
-        this.eventAggregator.subscribe('locationInputEnterPressed', (data) => delegate('handleLocationInputEnter', data));
-        this.eventAggregator.subscribe('userRequestedLFEditMode', () => delegate('handleLFEditRequest'));
-        this.eventAggregator.subscribe('userRequestedLFDeleteMode', () => delegate('handleLFDeleteMode'));
-        this.eventAggregator.subscribe('userToggledK3EditMode', () => delegate('handleToggleK3EditMode'));
-        this.eventAggregator.subscribe('userRequestedBatchCycle', (data) => delegate('handleBatchCycle', data));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_FOCUS_MODE, (data) => delegate('handleFocusModeRequest', data));
+        this.eventAggregator.subscribe(EVENTS.PANEL_INPUT_ENTER_PRESSED, (data) => delegate('handlePanelInputEnter', data));
+        this.eventAggregator.subscribe(EVENTS.PANEL_INPUT_BLURRED, (data) => delegate('handlePanelInputBlur', data));
+        this.eventAggregator.subscribe(EVENTS.LOCATION_INPUT_ENTER_PRESSED, (data) => delegate('handleLocationInputEnter', data));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_LF_EDIT_MODE, () => delegate('handleLFEditRequest'));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_LF_DELETE_MODE, () => delegate('handleLFDeleteMode'));
+        this.eventAggregator.subscribe(EVENTS.USER_TOGGLED_K3_EDIT_MODE, () => delegate('handleToggleK3EditMode'));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_BATCH_CYCLE, (data) => delegate('handleBatchCycle', data));
         
-        this.eventAggregator.subscribe('dualChainModeChanged', (data) => delegate('handleDualChainModeChange', data));
-        this.eventAggregator.subscribe('chainEnterPressed', (data) => delegate('handleChainEnterPressed', data));
-        this.eventAggregator.subscribe('driveModeChanged', (data) => delegate('handleDriveModeChange', data));
-        this.eventAggregator.subscribe('accessoryCounterChanged', (data) => delegate('handleAccessoryCounterChange', data));
+        this.eventAggregator.subscribe(EVENTS.DUAL_CHAIN_MODE_CHANGED, (data) => delegate('handleDualChainModeChange', data));
+        this.eventAggregator.subscribe(EVENTS.CHAIN_ENTER_PRESSED, (data) => delegate('handleChainEnterPressed', data));
+        this.eventAggregator.subscribe(EVENTS.DRIVE_MODE_CHANGED, (data) => delegate('handleDriveModeChange', data));
+        this.eventAggregator.subscribe(EVENTS.ACCESSORY_COUNTER_CHANGED, (data) => delegate('handleAccessoryCounterChange', data));
     }
 
     _subscribeGlobalEvents() {
-        this.eventAggregator.subscribe('userNavigatedToDetailView', () => this.workflowService.handleNavigationToDetailView());
-        this.eventAggregator.subscribe('userNavigatedToQuickQuoteView', () => this.workflowService.handleNavigationToQuickQuoteView());
-        this.eventAggregator.subscribe('userSwitchedTab', (data) => this.workflowService.handleTabSwitch(data));
-        this.eventAggregator.subscribe('userRequestedLoad', () => this.workflowService.handleUserRequestedLoad());
-        this.eventAggregator.subscribe('userChoseLoadDirectly', () => this.workflowService.handleLoadDirectly());
-        this.eventAggregator.subscribe('fileLoaded', (data) => this.workflowService.handleFileLoad(data));
+        this.eventAggregator.subscribe(EVENTS.USER_NAVIGATED_TO_DETAIL_VIEW, () => this.workflowService.handleNavigationToDetailView());
+        this.eventAggregator.subscribe(EVENTS.USER_NAVIGATED_TO_QUICK_QUOTE_VIEW, () => this.workflowService.handleNavigationToQuickQuoteView());
+        this.eventAggregator.subscribe(EVENTS.USER_SWITCHED_TAB, (data) => this.workflowService.handleTabSwitch(data));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_LOAD, () => this.workflowService.handleUserRequestedLoad());
+        this.eventAggregator.subscribe(EVENTS.USER_CHOSE_LOAD_DIRECTLY, () => this.workflowService.handleLoadDirectly());
+        this.eventAggregator.subscribe(EVENTS.FILE_LOADED, (data) => this.workflowService.handleFileLoad(data));
     }
 
     _subscribeF1Events() {
-        this.eventAggregator.subscribe('f1TabActivated', () => this.workflowService.handleF1TabActivation());
-        this.eventAggregator.subscribe('f1DiscountChanged', (data) => this.workflowService.handleF1DiscountChange(data));
-        this.eventAggregator.subscribe('userRequestedRemoteDistribution', () => this.workflowService.handleRemoteDistribution());
-        this.eventAggregator.subscribe('userRequestedDualDistribution', () => this.workflowService.handleDualDistribution());
+        this.eventAggregator.subscribe(EVENTS.F1_TAB_ACTIVATED, () => this.workflowService.handleF1TabActivation());
+        this.eventAggregator.subscribe(EVENTS.F1_DISCOUNT_CHANGED, (data) => this.workflowService.handleF1DiscountChange(data));
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_REMOTE_DISTRIBUTION, () => this.workflowService.handleRemoteDistribution());
+        this.eventAggregator.subscribe(EVENTS.USER_REQUESTED_DUAL_DISTRIBUTION, () => this.workflowService.handleDualDistribution());
     }
 
     _subscribeF2Events() {
-        this.eventAggregator.subscribe('f2TabActivated', () => this.workflowService.handleF2TabActivation());
-        this.eventAggregator.subscribe('f2ValueChanged', (data) => this.workflowService.handleF2ValueChange(data));
-        this.eventAggregator.subscribe('f2InputEnterPressed', (data) => this.workflowService.focusNextF2Input(data.id));
-        this.eventAggregator.subscribe('toggleFeeExclusion', (data) => this.workflowService.handleToggleFeeExclusion(data));
+        this.eventAggregator.subscribe(EVENTS.F2_TAB_ACTIVATED, () => this.workflowService.handleF2TabActivation());
+        this.eventAggregator.subscribe(EVENTS.F2_VALUE_CHANGED, (data) => this.workflowService.handleF2ValueChange(data));
+        this.eventAggregator.subscribe(EVENTS.F2_INPUT_ENTER_PRESSED, (data) => this.workflowService.focusNextF2Input(data.id));
+        this.eventAggregator.subscribe(EVENTS.TOGGLE_FEE_EXCLUSION, (data) => this.workflowService.handleToggleFeeExclusion(data));
     }
     
     // This is a special method used by AppContext to publish state, it needs access to stateService.
@@ -123,7 +126,7 @@ export class AppController {
     }
     
     publishInitialState() {
-        this.eventAggregator.publish('stateChanged', this._getFullState());
+        this.eventAggregator.publish(EVENTS.STATE_CHANGED, this._getFullState());
     }
 
     _startAutoSave() {

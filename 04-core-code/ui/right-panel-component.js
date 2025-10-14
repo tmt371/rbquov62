@@ -1,6 +1,8 @@
 /**
  * @fileoverview A dedicated component for managing and rendering the Right Panel UI.
  */
+import { EVENTS } from '../config/constants.js';
+
 export class RightPanelComponent {
     constructor(panelElement, eventAggregator, calculationService) {
         if (!panelElement) {
@@ -48,7 +50,7 @@ export class RightPanelComponent {
         this._initializeF2Listeners();
         this._initializeF4ButtonListeners();
 
-        this.eventAggregator.subscribe('focusElement', ({ elementId }) => {
+        this.eventAggregator.subscribe(EVENTS.FOCUS_ELEMENT, ({ elementId }) => {
             const element = this.panelElement.querySelector(`#${elementId}`);
             if (element) {
                 element.focus();
@@ -61,12 +63,12 @@ export class RightPanelComponent {
         // Handles clickable divs that act like buttons
         const remote1chQtyDiv = this.f1.displays.qty['remote-1ch'];
         if (remote1chQtyDiv) {
-            remote1chQtyDiv.addEventListener('click', () => this.eventAggregator.publish('userRequestedRemoteDistribution'));
+            remote1chQtyDiv.addEventListener('click', () => this.eventAggregator.publish(EVENTS.USER_REQUESTED_REMOTE_DISTRIBUTION));
         }
 
         const slimQtyDiv = this.f1.displays.qty['slim'];
         if (slimQtyDiv) {
-            slimQtyDiv.addEventListener('click', () => this.eventAggregator.publish('userRequestedDualDistribution'));
+            slimQtyDiv.addEventListener('click', () => this.eventAggregator.publish(EVENTS.USER_REQUESTED_DUAL_DISTRIBUTION));
         }
 
         // Handles discount input
@@ -75,7 +77,7 @@ export class RightPanelComponent {
             discountInput.addEventListener('input', (event) => {
                 const percentage = parseFloat(event.target.value) || 0;
                 // Use a dedicated event for clarity
-                this.eventAggregator.publish('f1DiscountChanged', { percentage });
+                this.eventAggregator.publish(EVENTS.F1_DISCOUNT_CHANGED, { percentage });
             });
         }
     }
@@ -122,13 +124,13 @@ export class RightPanelComponent {
         const setupF2InputListener = (inputElement) => {
             if (inputElement) {
                 inputElement.addEventListener('change', (event) => {
-                    this.eventAggregator.publish('f2ValueChanged', { id: event.target.id, value: event.target.value });
+                    this.eventAggregator.publish(EVENTS.F2_VALUE_CHANGED, { id: event.target.id, value: event.target.value });
                 });
                 
                 inputElement.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter') {
                         event.preventDefault();
-                        this.eventAggregator.publish('f2InputEnterPressed', { id: event.target.id });
+                        this.eventAggregator.publish(EVENTS.F2_INPUT_ENTER_PRESSED, { id: event.target.id });
                     }
                 });
             }
@@ -148,7 +150,7 @@ export class RightPanelComponent {
         feeCells.forEach(({ el, type }) => {
             if (el) {
                 el.addEventListener('click', () => {
-                    this.eventAggregator.publish('toggleFeeExclusion', { feeType: type });
+                    this.eventAggregator.publish(EVENTS.TOGGLE_FEE_EXCLUSION, { feeType: type });
                 });
             }
         });
@@ -202,10 +204,10 @@ export class RightPanelComponent {
 
     _initializeF4ButtonListeners() {
         const buttonEventMap = {
-            'f1-key-save': 'userRequestedSave',
-            'f1-key-export': 'userRequestedExportCSV',
-            'f1-key-load': 'userRequestedLoad',
-            'f1-key-reset': 'userRequestedReset'
+            'f1-key-save': EVENTS.USER_REQUESTED_SAVE,
+            'f1-key-export': EVENTS.USER_REQUESTED_EXPORT_CSV,
+            'f1-key-load': EVENTS.USER_REQUESTED_LOAD,
+            'f1-key-reset': EVENTS.USER_REQUESTED_RESET
         };
 
         for (const [id, eventName] of Object.entries(buttonEventMap)) {
@@ -375,13 +377,13 @@ export class RightPanelComponent {
         });
 
         if (targetContentId === '#f1-content') {
-            this.eventAggregator.publish('f1TabActivated');
+            this.eventAggregator.publish(EVENTS.F1_TAB_ACTIVATED);
             // Force a re-render of F1 tab content when it's activated.
             this._renderF1Tab(this.state);
         }
         
         if (targetContentId === '#f2-content') {
-            this.eventAggregator.publish('f2TabActivated');
+            this.eventAggregator.publish(EVENTS.F2_TAB_ACTIVATED);
         }
     }
 }

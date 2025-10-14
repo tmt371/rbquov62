@@ -7,6 +7,7 @@ import { NotificationComponent } from './notification-component.js';
 import { DialogComponent } from './dialog-component.js';
 import { LeftPanelComponent } from './left-panel-component.js';
 import { RightPanelComponent } from './right-panel-component.js';
+import { EVENTS } from '../config/constants.js';
 
 export class UIManager {
     constructor(appElement, eventAggregator, calculationService) {
@@ -34,7 +35,7 @@ export class UIManager {
             toggleElement: document.getElementById('function-panel-toggle'),
             eventAggregator: this.eventAggregator,
             expandedClass: 'is-expanded',
-            retractEventName: 'operationSuccessfulAutoHidePanel'
+            retractEventName: EVENTS.OPERATION_SUCCESSFUL_AUTO_HIDE_PANEL
         });
         
         this.rightPanelComponent = new RightPanelComponent(
@@ -57,7 +58,7 @@ export class UIManager {
     }
 
     initialize() {
-        this.eventAggregator.subscribe('userToggledNumericKeyboard', () => this._toggleNumericKeyboard());
+        this.eventAggregator.subscribe(EVENTS.USER_TOGGLED_NUMERIC_KEYBOARD, () => this._toggleNumericKeyboard());
         this._initializeResizeObserver();
     }
 

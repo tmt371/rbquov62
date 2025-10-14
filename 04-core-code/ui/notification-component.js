@@ -1,5 +1,7 @@
 // /04-core-code/ui/notification-component.js
 
+import { EVENTS } from '../config/constants.js';
+
 /**
  * @fileoverview A dedicated component for managing and displaying toast notifications.
  */
@@ -20,7 +22,7 @@ export class NotificationComponent {
     }
 
     initialize() {
-        this.eventAggregator.subscribe('showNotification', (data) => this.show(data));
+        this.eventAggregator.subscribe(EVENTS.SHOW_NOTIFICATION, (data) => this.show(data));
     }
 
     /**

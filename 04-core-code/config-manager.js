@@ -1,6 +1,7 @@
 // /04-core-code/config-manager.js
 import { f2Config } from './config/f2-config.js';
 import { paths } from './config/paths.js';
+import { EVENTS } from './config/constants.js';
 
 export class ConfigManager {
     constructor(eventAggregator) {
@@ -32,7 +33,7 @@ export class ConfigManager {
 
         } catch (error) {
             console.error("Failed to load price matrices:", error);
-            this.eventAggregator.publish('showNotification', { message: 'Error: Could not load the price list file!', type: 'error'});
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Error: Could not load the price list file!', type: 'error'});
         }
     }
 
