@@ -23,6 +23,13 @@ export class DriveAccessoriesView {
         const currentMode = this.uiService.getState().driveAccessoryMode;
         const newMode = currentMode === mode ? null : mode;
 
+        if (currentMode === 'winder') {
+            const isValid = this._validateWinderSelection();
+            if (!isValid) {
+                return; 
+            }
+        }
+
         if (currentMode) {
             this.recalculateAllDriveAccessoryPrices();
         }
@@ -30,7 +37,6 @@ export class DriveAccessoriesView {
         this.uiService.setDriveAccessoryMode(newMode);
 
         if (newMode) {
-            // [NEW] Automatically set quantity to 1 for remote/charger if motors exist.
             if (newMode === 'remote' || newMode === 'charger') {
                 const items = this.quoteService.getItems();
                 const hasMotor = items.some(item => !!item.motor);
@@ -53,8 +59,12 @@ export class DriveAccessoriesView {
         const { driveAccessoryMode } = this.uiService.getState();
         if (!driveAccessoryMode || (column !== 'winder' && column !== 'motor')) return;
 
-        const item = this.quoteService.getItems()[rowIndex];
+        const items = this.quoteService.getItems();
+        const item = items[rowIndex];
         if (!item) return;
+
+        const isLastRow = rowIndex === items.length - 1;
+        if (isLastRow) return;
 
         const isActivatingWinder = driveAccessoryMode === 'winder' && column === 'winder';
         const isActivatingMotor = driveAccessoryMode === 'motor' && column === 'motor';
@@ -65,13 +75,13 @@ export class DriveAccessoriesView {
                     message: 'This blind is set to Motor. Are you sure you want to change it to HD Winder?',
                     layout: [
                         [
-                            { type: 'button', text: 'Confirm', callback: () => this._toggleWinder(rowIndex, true) },
+                            { type: 'button', text: 'Confirm', callback: () => this._toggleWinder(rowIndex) },
                             { type: 'button', text: 'Cancel', className: 'secondary', callback: () => {} }
                         ]
                     ]
                 });
             } else {
-                this._toggleWinder(rowIndex, false);
+                this._toggleWinder(rowIndex);
             }
         } else if (isActivatingMotor) {
             if (item.winder) {
@@ -79,13 +89,13 @@ export class DriveAccessoriesView {
                     message: 'This blind is set to HD Winder. Are you sure you want to change it to Motor?',
                     layout: [
                         [
-                            { type: 'button', text: 'Confirm', callback: () => this._toggleMotor(rowIndex, true) },
+                            { type: 'button', text: 'Confirm', callback: () => this._toggleMotor(rowIndex) },
                             { type: 'button', text: 'Cancel', className: 'secondary', callback: () => {} }
                         ]
                     ]
                 });
             } else {
-                this._toggleMotor(rowIndex, false);
+                this._toggleMotor(rowIndex);
             }
         }
     }
@@ -125,20 +135,52 @@ export class DriveAccessoriesView {
         this.publish();
     }
 
-    _toggleWinder(rowIndex, isConfirmed) {
+    _toggleWinder(rowIndex) {
         const item = this.quoteService.getItems()[rowIndex];
         const newValue = item.winder ? '' : 'HD';
         this.quoteService.updateWinderMotorProperty(rowIndex, 'winder', newValue);
         this.publish();
     }
 
-    _toggleMotor(rowIndex, isConfirmed) {
+    _toggleMotor(rowIndex) {
         const item = this.quoteService.getItems()[rowIndex];
         const newValue = item.motor ? '' : 'Motor';
         this.quoteService.updateWinderMotorProperty(rowIndex, 'motor', newValue);
         this.publish();
     }
     
+    _validateWinderSelection() {
+        const items = this.quoteService.getItems();
+        const selectedIndexes = items.reduce((acc, item, index) => {
+            if (item.winder === 'HD') {
+                acc.push(index);
+            }
+            return acc;
+        }, []);
+
+        const winderCount = selectedIndexes.length;
+
+        if (winderCount > 0 && winderCount % 2 !== 0) {
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, {
+                message: 'The total count of HD Winders must be an even number. Please correct the selection.',
+                type: 'error'
+            });
+            return false;
+        }
+
+        for (let i = 0; i < winderCount; i += 2) {
+            if (selectedIndexes[i+1] !== selectedIndexes[i] + 1) {
+                this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, {
+                    message: 'HD Winders must be set on adjacent items. Please check your selection.',
+                    type: 'error'
+                });
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
     recalculateAllDriveAccessoryPrices() {
         const items = this.quoteService.getItems();
         const state = this.uiService.getState();
