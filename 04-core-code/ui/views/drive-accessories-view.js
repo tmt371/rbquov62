@@ -1,5 +1,7 @@
 // File: 04-core-code/ui/views/drive-accessories-view.js
 
+import { EVENTS } from '../../config/constants.js';
+
 /**
  * @fileoverview A dedicated sub-view for handling all logic related to the Drive/Accessories tab.
  */
@@ -41,7 +43,7 @@ export class DriveAccessoriesView {
             }
 
             const message = this._getHintMessage(newMode);
-            this.eventAggregator.publish('showNotification', { message });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message });
         }
 
         this.publish();
@@ -59,7 +61,7 @@ export class DriveAccessoriesView {
 
         if (isActivatingWinder) {
             if (item.motor) {
-                this.eventAggregator.publish('showConfirmationDialog', {
+                this.eventAggregator.publish(EVENTS.SHOW_CONFIRMATION_DIALOG, {
                     message: 'This blind is set to Motor. Are you sure you want to change it to HD Winder?',
                     layout: [
                         [
@@ -73,7 +75,7 @@ export class DriveAccessoriesView {
             }
         } else if (isActivatingMotor) {
             if (item.winder) {
-                this.eventAggregator.publish('showConfirmationDialog', {
+                this.eventAggregator.publish(EVENTS.SHOW_CONFIRMATION_DIALOG, {
                     message: 'This blind is set to HD Winder. Are you sure you want to change it to Motor?',
                     layout: [
                         [
@@ -103,7 +105,7 @@ export class DriveAccessoriesView {
             const hasMotor = items.some(item => !!item.motor);
             if (hasMotor && (accessory === 'remote' || accessory === 'charger')) {
                 const accessoryName = accessory === 'remote' ? 'Remote' : 'Charger';
-                this.eventAggregator.publish('showConfirmationDialog', {
+                this.eventAggregator.publish(EVENTS.SHOW_CONFIRMATION_DIALOG, {
                     message: `Motors are present in the quote. Are you sure you want to set the ${accessoryName} quantity to 0?`,
                     layout: [
                         [

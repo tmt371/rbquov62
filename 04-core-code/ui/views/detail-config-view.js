@@ -128,9 +128,9 @@ export class DetailConfigView {
     }
 
     handleTableCellClick({ rowIndex, column }) {
-        const { activeEditMode, dualChainMode, driveAccessoriesView } = this.uiService.getState();
+        const { activeEditMode, dualChainMode, driveAccessoryMode } = this.uiService.getState();
         
-        if (driveAccessoriesView) {
+        if (driveAccessoryMode) {
             this.driveAccessoriesView.handleTableCellClick({ rowIndex, column });
             return;
         }
