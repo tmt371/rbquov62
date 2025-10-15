@@ -1,5 +1,7 @@
 // File: 04-core-code/ui/views/quick-quote-view.js
 
+import { EVENTS } from '../../config/constants.js';
+
 /**
  * @fileoverview View module responsible for all logic related to the Quick Quote screen.
  */
@@ -23,7 +25,7 @@ export class QuickQuoteView {
         const isLastRowEmpty = (rowIndex === items.length - 1) && (!item.width && !item.height);
 
         if (isLastRowEmpty) {
-            this.eventAggregator.publish('showNotification', { message: "Cannot select the final empty row.", type: 'error' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: "Cannot select the final empty row.", type: 'error' });
             return;
         }
         
@@ -35,12 +37,12 @@ export class QuickQuoteView {
         const { multiSelectSelectedIndexes } = this.uiService.getState();
 
         if (multiSelectSelectedIndexes.length > 1) {
-            this.eventAggregator.publish('showNotification', { message: 'Only one item can be deleted at a time.', type: 'error' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Only one item can be deleted at a time.', type: 'error' });
             return;
         }
 
         if (multiSelectSelectedIndexes.length === 0) {
-            this.eventAggregator.publish('showNotification', { message: 'Please select an item to delete.' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Please select an item to delete.' });
             return;
         }
 
@@ -52,19 +54,19 @@ export class QuickQuoteView {
         this.focusService.focusAfterDelete();
         
         this.publish();
-        this.eventAggregator.publish('operationSuccessfulAutoHidePanel');
+        this.eventAggregator.publish(EVENTS.OPERATION_SUCCESSFUL_AUTO_HIDE_PANEL);
     }
 
     handleInsertRow() {
         const { multiSelectSelectedIndexes } = this.uiService.getState();
 
         if (multiSelectSelectedIndexes.length > 1) {
-            this.eventAggregator.publish('showNotification', { message: 'A new item can only be inserted below a single selection.', type: 'error' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'A new item can only be inserted below a single selection.', type: 'error' });
             return;
         }
 
         if (multiSelectSelectedIndexes.length === 0) {
-            this.eventAggregator.publish('showNotification', { message: 'Please select a position to insert the new item.' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Please select a position to insert the new item.' });
             return;
         }
 
@@ -73,13 +75,13 @@ export class QuickQuoteView {
         const isLastRow = selectedIndex === items.length - 1;
 
         if (isLastRow) {
-             this.eventAggregator.publish('showNotification', { message: "Cannot insert after the last row.", type: 'error' });
+             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: "Cannot insert after the last row.", type: 'error' });
              return;
         }
         const nextItem = items[selectedIndex + 1];
         const isNextRowEmpty = !nextItem.width && !nextItem.height && !nextItem.fabricType;
         if (isNextRowEmpty) {
-            this.eventAggregator.publish('showNotification', { message: "Cannot insert before an empty row.", type: 'error' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: "Cannot insert before an empty row.", type: 'error' });
             return;
         }
         
@@ -87,7 +89,7 @@ export class QuickQuoteView {
         this.uiService.setActiveCell(newRowIndex, 'width');
         this.uiService.clearMultiSelectSelection();
         this.publish();
-        this.eventAggregator.publish('operationSuccessfulAutoHidePanel');
+        this.eventAggregator.publish(EVENTS.OPERATION_SUCCESSFUL_AUTO_HIDE_PANEL);
     }
 
     handleNumericKeyPress({ key }) {
@@ -112,15 +114,13 @@ export class QuickQuoteView {
         const rule = validationRules[inputMode];
 
         if (rule && value !== null && (isNaN(value) || value < rule.min || value > rule.max)) {
-            this.eventAggregator.publish('showNotification', { message: `${rule.name} must be between ${rule.min} and ${rule.max}.`, type: 'error' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: `${rule.name} must be between ${rule.min} and ${rule.max}.`, type: 'error' });
             this.uiService.clearInputValue();
             this.publish();
             return;
         }
-        const changed = this.quoteService.updateItemValue(activeCell.rowIndex, activeCell.column, value);
-        if (changed) {
-            this.uiService.setSumOutdated(true);
-        }
+        this.quoteService.updateItemValue(activeCell.rowIndex, activeCell.column, value);
+        this.uiService.setSumOutdated(true);
         this.focusService.focusAfterCommit();
     }
 
@@ -128,30 +128,29 @@ export class QuickQuoteView {
         const quoteData = this.quoteService.getQuoteData();
         const result = this.fileService.saveToJson(quoteData);
         const notificationType = result.success ? 'info' : 'error';
-        this.eventAggregator.publish('showNotification', { message: result.message, type: notificationType });
+        this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: result.message, type: notificationType });
     }
 
     handleExportCSV() {
         const quoteData = this.quoteService.getQuoteData();
         const result = this.fileService.exportToCsv(quoteData);
         const notificationType = result.success ? 'info' : 'error';
-        this.eventAggregator.publish('showNotification', { message: result.message, type: notificationType });
+        this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: result.message, type: notificationType });
     }
     
     handleReset() {
         if (window.confirm("This will clear all data. Are you sure?")) {
             this.quoteService.reset();
             this.uiService.reset();
-            this.eventAggregator.publish('showNotification', { message: 'Quote has been reset.' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Quote has been reset.' });
         }
     }
     
     handleClearRow() {
         const { multiSelectSelectedIndexes } = this.uiService.getState();
 
-        // [MODIFIED] Guardrail: Ensure exactly one item is selected.
         if (multiSelectSelectedIndexes.length !== 1) {
-            this.eventAggregator.publish('showNotification', { 
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { 
                 message: 'Please select a single item to use this function.', 
                 type: 'error' 
             });
@@ -161,8 +160,7 @@ export class QuickQuoteView {
         const selectedIndex = multiSelectSelectedIndexes[0];
         const itemNumber = selectedIndex + 1;
 
-        // [MODIFIED] Show the new dialog box instead of performing a direct action.
-        this.eventAggregator.publish('showConfirmationDialog', {
+        this.eventAggregator.publish(EVENTS.SHOW_CONFIRMATION_DIALOG, {
             message: `Row #${itemNumber}: What would you like to do?`,
             layout: [
                 [
@@ -215,11 +213,8 @@ export class QuickQuoteView {
             this.uiService.setInputValue(item[column]);
         } else if (column === 'TYPE') {
             this.uiService.setActiveCell(rowIndex, column);
-            const changedIndexes = this.quoteService.cycleItemType(rowIndex);
-            if (changedIndexes.length > 0) {
-                this.quoteService.removeLFModifiedRows(changedIndexes);
-                this.uiService.setSumOutdated(true);
-            }
+            this.quoteService.cycleItemType(rowIndex);
+            this.uiService.setSumOutdated(true);
         }
         this.publish();
     }
@@ -229,18 +224,8 @@ export class QuickQuoteView {
         const eligibleItems = items.filter(item => item.width && item.height);
         if (eligibleItems.length === 0) return;
         
-        const TYPE_SEQUENCE = this.configManager.getFabricTypeSequence();
-        if (TYPE_SEQUENCE.length === 0) return;
-
-        const firstType = eligibleItems[0].fabricType || TYPE_SEQUENCE[TYPE_SEQUENCE.length - 1];
-        const currentIndex = TYPE_SEQUENCE.indexOf(firstType);
-        const nextType = TYPE_SEQUENCE[(currentIndex + 1) % TYPE_SEQUENCE.length];
-        
-        const changedIndexes = this.quoteService.batchUpdateFabricType(nextType);
-        if (changedIndexes.length > 0) {
-            this.quoteService.removeLFModifiedRows(changedIndexes);
-            this.uiService.setSumOutdated(true);
-        }
+        this.quoteService.batchUpdateFabricType();
+        this.uiService.setSumOutdated(true);
     }
 
     _showFabricTypeDialog(callback, dialogTitle = 'Select a fabric type:') {
@@ -262,7 +247,7 @@ export class QuickQuoteView {
             { type: 'button', text: 'Cancel', className: 'secondary cancel-cell', callback: () => {}, colspan: 1 }
         ]);
 
-        this.eventAggregator.publish('showConfirmationDialog', {
+        this.eventAggregator.publish(EVENTS.SHOW_CONFIRMATION_DIALOG, {
             message: dialogTitle,
             layout: layout,
             position: 'bottomThird'
@@ -272,27 +257,21 @@ export class QuickQuoteView {
     handleTypeCellLongPress({ rowIndex }) {
         const item = this.quoteService.getItems()[rowIndex];
         if (!item || (!item.width && !item.height)) {
-            this.eventAggregator.publish('showNotification', { message: 'Cannot set type for an empty row.', type: 'error' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Cannot set type for an empty row.', type: 'error' });
             return;
         }
         this._showFabricTypeDialog((newType) => {
-            const changedIndexes = this.quoteService.setItemType(rowIndex, newType);
-            if (changedIndexes.length > 0) {
-                this.quoteService.removeLFModifiedRows(changedIndexes);
-                this.uiService.setSumOutdated(true);
-            }
-            return changedIndexes.length > 0;
+            this.quoteService.setItemType(rowIndex, newType);
+            this.uiService.setSumOutdated(true);
+            return true;
         }, `Set fabric type for Row #${rowIndex + 1}:`);
     }
 
     handleTypeButtonLongPress() {
         this._showFabricTypeDialog((newType) => {
-            const changedIndexes = this.quoteService.batchUpdateFabricType(newType);
-            if (changedIndexes.length > 0) {
-                this.quoteService.removeLFModifiedRows(changedIndexes);
-                this.uiService.setSumOutdated(true);
-            }
-            return changedIndexes.length > 0;
+            this.quoteService.batchUpdateFabricType(newType);
+            this.uiService.setSumOutdated(true);
+            return true;
         }, 'Set fabric type for ALL rows:');
     }
 
@@ -300,19 +279,16 @@ export class QuickQuoteView {
         const { multiSelectSelectedIndexes } = this.uiService.getState();
 
         if (multiSelectSelectedIndexes.length <= 1) {
-            this.eventAggregator.publish('showNotification', { message: 'Please select multiple items first.', type: 'error' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Please select multiple items first.', type: 'error' });
             return;
         }
 
         const title = `Set fabric type for ${multiSelectSelectedIndexes.length} selected rows:`;
         this._showFabricTypeDialog((newType) => {
-            const changedIndexes = this.quoteService.batchUpdateFabricTypeForSelection(multiSelectSelectedIndexes, newType);
-            if (changedIndexes.length > 0) {
-                this.quoteService.removeLFModifiedRows(changedIndexes);
-                this.uiService.clearMultiSelectSelection();
-                this.uiService.setSumOutdated(true);
-            }
-            return changedIndexes.length > 0;
+            this.quoteService.batchUpdateFabricTypeForSelection(multiSelectSelectedIndexes, newType);
+            this.uiService.clearMultiSelectSelection();
+            this.uiService.setSumOutdated(true);
+            return true;
         }, title);
     }
 
@@ -325,7 +301,7 @@ export class QuickQuoteView {
 
         if (firstError) {
             this.uiService.setSumOutdated(true);
-            this.eventAggregator.publish('showNotification', { message: firstError.message, type: 'error' });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: firstError.message, type: 'error' });
             this.uiService.setActiveCell(firstError.rowIndex, firstError.column);
         } else {
             this.uiService.setSumOutdated(false);
@@ -334,6 +310,6 @@ export class QuickQuoteView {
 
     handleSaveThenLoad() {
         this.handleSaveToFile();
-        this.eventAggregator.publish('triggerFileLoad');
+        this.eventAggregator.publish(EVENTS.TRIGGER_FILE_LOAD);
     }
 }

@@ -12,7 +12,6 @@ function _consolidateEmptyRows(items, productFactory, productKey) {
     let newItems = [...items];
     if (!newItems || newItems.length === 0) return [];
 
-    // Remove redundant empty rows from the end
     while (newItems.length > 1) {
         const lastItem = newItems[newItems.length - 1];
         const secondLastItem = newItems[newItems.length - 2];
@@ -26,7 +25,6 @@ function _consolidateEmptyRows(items, productFactory, productKey) {
         }
     }
 
-    // Ensure there is always one empty row at the end
     const lastItem = newItems[newItems.length - 1];
     if (lastItem && (lastItem.width || lastItem.height)) {
         const productStrategy = productFactory.getProductStrategy(productKey);
@@ -167,6 +165,42 @@ function quoteReducer(state, action, { productFactory, configManager }) {
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
 
+        case QUOTE_ACTION_TYPES.DELETE_ROW: {
+            items = [...productData.items];
+            const { selectedIndex } = action.payload;
+            const itemToDelete = items[selectedIndex];
+            if (!itemToDelete) return state;
+
+            const isLastPopulatedRow = selectedIndex === items.length - 2 && items.length > 1 && !items[items.length - 1].width && !items[items.length-1].height;
+
+            if (isLastPopulatedRow || items.length === 1) {
+                const productStrategy = productFactory.getProductStrategy(productKey);
+                const newItem = productStrategy.getInitialItemData();
+                newItem.itemId = itemToDelete.itemId;
+                items[selectedIndex] = newItem;
+            } else {
+                items.splice(selectedIndex, 1);
+            }
+            items = _consolidateEmptyRows(items, productFactory, productKey);
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
+        
+        case QUOTE_ACTION_TYPES.CLEAR_ROW: {
+            items = [...productData.items];
+            const { selectedIndex } = action.payload;
+            const itemToClear = items[selectedIndex];
+            if (itemToClear) {
+                const productStrategy = productFactory.getProductStrategy(productKey);
+                const newItem = productStrategy.getInitialItemData();
+                newItem.itemId = itemToClear.itemId;
+                items[selectedIndex] = newItem;
+                productData = { ...productData, items };
+                return { ...state, products: { ...state.products, [productKey]: productData } };
+            }
+            return state;
+        }
+
         case QUOTE_ACTION_TYPES.UPDATE_ITEM_VALUE: {
             items = [...productData.items];
             const { rowIndex, column, value } = action.payload;
@@ -187,22 +221,60 @@ function quoteReducer(state, action, { productFactory, configManager }) {
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
 
-        case QUOTE_ACTION_TYPES.CYCLE_ITEM_TYPE: {
+        case QUOTE_ACTION_TYPES.CYCLE_ITEM_TYPE:
+        case QUOTE_ACTION_TYPES.SET_ITEM_TYPE:
+        case QUOTE_ACTION_TYPES.BATCH_UPDATE_FABRIC_TYPE:
+        case QUOTE_ACTION_TYPES.BATCH_UPDATE_FABRIC_TYPE_FOR_SELECTION: {
             items = [...productData.items];
-            const { rowIndex } = action.payload;
-            const item = items[rowIndex];
-            if (!item || (!item.width && !item.height)) return state;
-
             const TYPE_SEQUENCE = configManager.getFabricTypeSequence();
             if (TYPE_SEQUENCE.length === 0) return state;
 
-            const currentType = item.fabricType || TYPE_SEQUENCE[TYPE_SEQUENCE.length - 1];
-            const currentIndex = TYPE_SEQUENCE.indexOf(currentType);
-            const nextType = TYPE_SEQUENCE[(currentIndex + 1) % TYPE_SEQUENCE.length];
-            
-            items[rowIndex] = { ...item, fabricType: nextType, linePrice: null, fabric: '', color: '' };
-            productData = { ...productData, items };
-            return { ...state, products: { ...state.products, [productKey]: productData } };
+            let changedIndexes = [];
+
+            if (action.type === QUOTE_ACTION_TYPES.CYCLE_ITEM_TYPE) {
+                const { rowIndex } = action.payload;
+                const item = items[rowIndex];
+                if (item && (item.width || item.height)) {
+                    const currentType = item.fabricType || TYPE_SEQUENCE[TYPE_SEQUENCE.length - 1];
+                    const currentIndex = TYPE_SEQUENCE.indexOf(currentType);
+                    const nextType = TYPE_SEQUENCE[(currentIndex + 1) % TYPE_SEQUENCE.length];
+                    items[rowIndex] = { ...item, fabricType: nextType, linePrice: null, fabric: '', color: '' };
+                    changedIndexes.push(rowIndex);
+                }
+            } else if (action.type === QUOTE_ACTION_TYPES.SET_ITEM_TYPE) {
+                const { rowIndex, newType } = action.payload;
+                if (items[rowIndex].fabricType !== newType) {
+                    items[rowIndex] = { ...items[rowIndex], fabricType: newType, linePrice: null, fabric: '', color: '' };
+                    changedIndexes.push(rowIndex);
+                }
+            } else if (action.type === QUOTE_ACTION_TYPES.BATCH_UPDATE_FABRIC_TYPE) {
+                const { newType } = action.payload;
+                items = items.map((item, index) => {
+                    if (item.width && item.height && item.fabricType !== newType) {
+                        changedIndexes.push(index);
+                        return { ...item, fabricType: newType, linePrice: null, fabric: '', color: '' };
+                    }
+                    return item;
+                });
+            } else if (action.type === QUOTE_ACTION_TYPES.BATCH_UPDATE_FABRIC_TYPE_FOR_SELECTION) {
+                const { selectedIndexes, newType } = action.payload;
+                items = items.map((item, index) => {
+                    if (selectedIndexes.includes(index) && item.width && item.height && item.fabricType !== newType) {
+                        changedIndexes.push(index);
+                        return { ...item, fabricType: newType, linePrice: null, fabric: '', color: '' };
+                    }
+                    return item;
+                });
+            }
+
+            if (changedIndexes.length > 0) {
+                const modifiedIndexes = new Set(state.uiMetadata.lfModifiedRowIndexes);
+                changedIndexes.forEach(index => modifiedIndexes.delete(index));
+                const newUiMetadata = { ...state.uiMetadata, lfModifiedRowIndexes: Array.from(modifiedIndexes) };
+                productData = { ...productData, items };
+                return { ...state, products: { ...state.products, [productKey]: productData }, uiMetadata: newUiMetadata };
+            }
+            return state;
         }
 
         case QUOTE_ACTION_TYPES.UPDATE_ACCESSORY_SUMMARY: {
