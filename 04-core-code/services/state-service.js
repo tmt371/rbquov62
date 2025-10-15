@@ -1,6 +1,7 @@
 // File: 04-core-code/services/state-service.js
 
 import { EVENTS } from '../config/constants.js';
+import { createRootReducer } from '../reducers/root-reducer.js';
 
 /**
  * @fileoverview Service for managing the entire application state.
@@ -9,18 +10,17 @@ import { EVENTS } from '../config/constants.js';
  */
 export class StateService {
     /**
-     * @param {object} initialState The initial state of the entire application.
-     * @param {EventAggregator} eventAggregator The event aggregator instance.
+     * @param {object} dependencies - The service dependencies.
      */
-    constructor({ initialState, eventAggregator }) {
+    constructor({ initialState, eventAggregator, productFactory, configManager }) {
         this._state = initialState;
         this.eventAggregator = eventAggregator;
-        console.log("StateService Finalized.");
+        this.reducer = createRootReducer({ productFactory, configManager });
+        console.log("StateService Finalized and refactored for Reducer pattern.");
     }
 
     /**
-     * Returns the current state. Since all state updates are now immutable,
-     * we can safely return a direct reference to the state object.
+     * Returns the current state.
      * @returns {object} The current application state.
      */
     getState() {
@@ -28,12 +28,16 @@ export class StateService {
     }
 
     /**
-     * Updates the state with a new state object and publishes an internal event.
-     * @param {object} newState The new state.
+     * Dispatches an action to the reducer to update the state.
+     * @param {object} action The action object describing the state change.
      */
-    updateState(newState) {
-        this._state = newState;
-        // Publishing the new state directly, as getState() no longer deep copies.
-        this.eventAggregator.publish(EVENTS.INTERNAL_STATE_UPDATED, this._state);
+    dispatch(action) {
+        const newState = this.reducer(this._state, action);
+        
+        // Only update and publish if the state has actually changed.
+        if (newState !== this._state) {
+            this._state = newState;
+            this.eventAggregator.publish(EVENTS.INTERNAL_STATE_UPDATED, this._state);
+        }
     }
 }

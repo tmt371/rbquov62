@@ -1,49 +1,156 @@
 // File: 04-core-code/reducers/root-reducer.js
 
 /**
- * @fileoverview This will be the single source of truth for all state mutation logic.
+ * @fileoverview This is the single source of truth for all state mutation logic.
  * It contains a root reducer that delegates actions to sub-reducers based on action type prefixes.
  */
 
-// This is a placeholder for now. In the next phase, we will move logic
-// from UIService and QuoteService into this file.
+import { UI_ACTION_TYPES, QUOTE_ACTION_TYPES } from '../config/action-types.js';
+import { initialState } from '../config/initial-state.js';
 
-import { UI_ACTION_TYPES } from '../config/action-types.js';
-import { QUOTE_ACTION_TYPES } from '../config/action-types.js';
-
-// A simple placeholder reducer for now.
 function uiReducer(state, action) {
-    // In the next phase, we will add switch cases here for UI actions.
     switch (action.type) {
-        // Example:
-        // case UI_ACTION_TYPES.SET_ACTIVE_CELL:
-        //     return { ...state, activeCell: action.payload };
+        case UI_ACTION_TYPES.SET_CURRENT_VIEW:
+            return { ...state, currentView: action.payload.viewName };
+        case UI_ACTION_TYPES.SET_VISIBLE_COLUMNS:
+            return { ...state, visibleColumns: action.payload.columns };
+        case UI_ACTION_TYPES.SET_ACTIVE_TAB:
+            return { ...state, activeTabId: action.payload.tabId };
+        case UI_ACTION_TYPES.SET_ACTIVE_CELL:
+            return { ...state, activeCell: action.payload, inputMode: action.payload.column };
+        case UI_ACTION_TYPES.SET_INPUT_VALUE:
+            return { ...state, inputValue: String(action.payload.value || '') };
+        case UI_ACTION_TYPES.APPEND_INPUT_VALUE:
+            return { ...state, inputValue: state.inputValue + action.payload.key };
+        case UI_ACTION_TYPES.DELETE_LAST_INPUT_CHAR:
+            return { ...state, inputValue: state.inputValue.slice(0, -1) };
+        case UI_ACTION_TYPES.CLEAR_INPUT_VALUE:
+            return { ...state, inputValue: '' };
+        case UI_ACTION_TYPES.TOGGLE_MULTI_SELECT_MODE: {
+            const isEnteringMode = !state.isMultiSelectMode;
+            const newSelectedIndexes = isEnteringMode && state.selectedRowIndex !== null ? [state.selectedRowIndex] : [];
+            return { ...state, isMultiSelectMode: isEnteringMode, multiSelectSelectedIndexes: newSelectedIndexes, selectedRowIndex: null };
+        }
+        case UI_ACTION_TYPES.TOGGLE_MULTI_SELECT_SELECTION: {
+            const selectedIndexes = new Set(state.multiSelectSelectedIndexes);
+            if (selectedIndexes.has(action.payload.rowIndex)) {
+                selectedIndexes.delete(action.payload.rowIndex);
+            } else {
+                selectedIndexes.add(action.payload.rowIndex);
+            }
+            return { ...state, multiSelectSelectedIndexes: Array.from(selectedIndexes) };
+        }
+        case UI_ACTION_TYPES.CLEAR_MULTI_SELECT_SELECTION:
+            return { ...state, multiSelectSelectedIndexes: [] };
+        case UI_ACTION_TYPES.SET_ACTIVE_EDIT_MODE:
+            return { ...state, activeEditMode: action.payload.mode };
+        case UI_ACTION_TYPES.SET_TARGET_CELL:
+            return { ...state, targetCell: action.payload.cell };
+        case UI_ACTION_TYPES.SET_LOCATION_INPUT_VALUE:
+            return { ...state, locationInputValue: action.payload.value };
+        case UI_ACTION_TYPES.TOGGLE_LF_SELECTION: {
+            const selectedIndexes = new Set(state.lfSelectedRowIndexes);
+            if (selectedIndexes.has(action.payload.rowIndex)) {
+                selectedIndexes.delete(action.payload.rowIndex);
+            } else {
+                selectedIndexes.add(action.payload.rowIndex);
+            }
+            return { ...state, lfSelectedRowIndexes: Array.from(selectedIndexes) };
+        }
+        case UI_ACTION_TYPES.CLEAR_LF_SELECTION:
+            return { ...state, lfSelectedRowIndexes: [] };
+        case UI_ACTION_TYPES.SET_DUAL_CHAIN_MODE:
+            return { ...state, dualChainMode: action.payload.mode };
+        case UI_ACTION_TYPES.SET_DRIVE_ACCESSORY_MODE:
+            return { ...state, driveAccessoryMode: action.payload.mode };
+        case UI_ACTION_TYPES.SET_DRIVE_ACCESSORY_COUNT: {
+            const { accessory, count } = action.payload;
+            const newUi = { ...state };
+            if (count >= 0) {
+                switch (accessory) {
+                    case 'remote': newUi.driveRemoteCount = count; break;
+                    case 'charger': newUi.driveChargerCount = count; break;
+                    case 'cord': newUi.driveCordCount = count; break;
+                }
+            }
+            return newUi;
+        }
+        case UI_ACTION_TYPES.SET_DRIVE_ACCESSORY_TOTAL_PRICE: {
+            const { accessory, price } = action.payload;
+            const newUi = { ...state };
+            switch(accessory) {
+                case 'winder': newUi.driveWinderTotalPrice = price; break;
+                case 'motor': newUi.driveMotorTotalPrice = price; break;
+                case 'remote': newUi.driveRemoteTotalPrice = price; break;
+                case 'charger': newUi.driveChargerTotalPrice = price; break;
+                case 'cord': newUi.driveCordTotalPrice = price; break;
+            }
+            return newUi;
+        }
+        case UI_ACTION_TYPES.SET_DRIVE_GRAND_TOTAL:
+            return { ...state, driveGrandTotal: action.payload.price };
+        case UI_ACTION_TYPES.SET_F1_REMOTE_DISTRIBUTION:
+            return { ...state, f1: { ...state.f1, remote_1ch_qty: action.payload.qty1, remote_16ch_qty: action.payload.qty16 } };
+        case UI_ACTION_TYPES.SET_F1_DUAL_DISTRIBUTION:
+            return { ...state, f1: { ...state.f1, dual_combo_qty: action.payload.comboQty, dual_slim_qty: action.payload.slimQty } };
+        case UI_ACTION_TYPES.SET_F1_DISCOUNT_PERCENTAGE:
+            return { ...state, f1: { ...state.f1, discountPercentage: action.payload.percentage } };
+        case UI_ACTION_TYPES.SET_F2_VALUE: {
+            const { key, value } = action.payload;
+            if (state.f2.hasOwnProperty(key)) {
+                return { ...state, f2: { ...state.f2, [key]: value } };
+            }
+            return state;
+        }
+        case UI_ACTION_TYPES.TOGGLE_F2_FEE_EXCLUSION: {
+            const key = `${action.payload.feeType}FeeExcluded`;
+            if (state.f2.hasOwnProperty(key)) {
+                return { ...state, f2: { ...state.f2, [key]: !state.f2[key] } };
+            }
+            return state;
+        }
+        case UI_ACTION_TYPES.SET_SUM_OUTDATED:
+            return { ...state, isSumOutdated: action.payload.isOutdated };
+        case UI_ACTION_TYPES.RESET_UI:
+            return JSON.parse(JSON.stringify(initialState.ui));
         default:
             return state;
     }
 }
 
-// A simple placeholder reducer for now.
-function quoteReducer(state, action) {
-    // In the next phase, we will add switch cases here for Quote actions.
+// NOTE: This reducer is more complex because it deals with nested state and arrays.
+function quoteReducer(state, action, productFactory, configManager) {
+    const productKey = state.currentProduct;
+    const productData = state.products[productKey];
+    
     switch (action.type) {
+        // Reducers for array manipulations
+        // ... (Cases for INSERT_ROW, DELETE_ROW, etc. will be added here)
+        // Reducers for item property updates
+        // ... (Cases for UPDATE_ITEM_VALUE, etc. will be added here)
         default:
             return state;
     }
 }
 
-export function rootReducer(state, action) {
-    // Delegate to the appropriate sub-reducer based on the action type prefix.
-    if (action.type.startsWith('ui/')) {
-        const newUiState = uiReducer(state.ui, action);
-        return { ...state, ui: newUiState };
-    }
+export function createRootReducer(dependencies) {
+    const { productFactory, configManager } = dependencies;
 
-    if (action.type.startsWith('quote/')) {
-        const newQuoteState = quoteReducer(state.quoteData, action);
-        return { ...state, quoteData: newQuoteState };
-    }
+    return function rootReducer(state, action) {
+        if (action.type.startsWith('ui/')) {
+            const newUiState = uiReducer(state.ui, action);
+            if (newUiState !== state.ui) {
+                return { ...state, ui: newUiState };
+            }
+        }
 
-    // If the action type doesn't match, return the current state without changes.
-    return state;
+        if (action.type.startsWith('quote/')) {
+            const newQuoteState = quoteReducer(state.quoteData, action, productFactory, configManager);
+            if (newQuoteState !== state.quoteData) {
+                return { ...state, quoteData: newQuoteState };
+            }
+        }
+
+        return state;
+    };
 }
