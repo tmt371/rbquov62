@@ -13,5 +13,10 @@ export default {
   testMatch: [
     '**/__tests__/**/*.js',
     '**/?(*.)+(spec|test).js'
-  ]
+  ],
+
+  // 將遠端的 uuid 模組 URL 映射到本地安裝的 npm 套件，以解決 Node.js 環境下的導入問題
+  moduleNameMapper: {
+    'https://cdn.jsdelivr.net/npm/uuid@9.0.1/dist/esm-browser/index.js': 'uuid',
+  },
 };
