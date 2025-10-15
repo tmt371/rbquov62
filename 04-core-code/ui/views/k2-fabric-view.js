@@ -187,7 +187,8 @@ export class K2FabricView {
 
     _exitAllK2Modes() {
         this.uiService.setActiveEditMode(null);
-        this.uiService.clearRowSelection();
+        // [FIX] Corrected the method name to match the refactored UIService API.
+        this.uiService.clearMultiSelectSelection();
         this.uiService.clearLFSelection();
         
         this.indexesToExcludeFromBatchUpdate.clear();

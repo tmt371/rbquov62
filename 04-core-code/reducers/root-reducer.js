@@ -221,6 +221,29 @@ function quoteReducer(state, action, { productFactory, configManager }) {
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
 
+        case QUOTE_ACTION_TYPES.BATCH_UPDATE_PROPERTY_BY_TYPE: {
+            items = [...productData.items];
+            const { type, property, value, indexesToExclude } = action.payload;
+            items = items.map((item, index) => {
+                if (!indexesToExclude.has(index) && item.fabricType === type && item[property] !== value) {
+                    return { ...item, [property]: value };
+                }
+                return item;
+            });
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
+
+        case QUOTE_ACTION_TYPES.UPDATE_ITEM_PROPERTY: {
+            items = [...productData.items];
+            const { rowIndex, property, value } = action.payload;
+            const item = items[rowIndex];
+            if (!item || item[property] === value) return state;
+            items[rowIndex] = { ...item, [property]: value };
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
+        
         case QUOTE_ACTION_TYPES.CYCLE_ITEM_TYPE:
         case QUOTE_ACTION_TYPES.SET_ITEM_TYPE:
         case QUOTE_ACTION_TYPES.BATCH_UPDATE_FABRIC_TYPE:
@@ -230,6 +253,7 @@ function quoteReducer(state, action, { productFactory, configManager }) {
             if (TYPE_SEQUENCE.length === 0) return state;
 
             let changedIndexes = [];
+            let newItems;
 
             if (action.type === QUOTE_ACTION_TYPES.CYCLE_ITEM_TYPE) {
                 const { rowIndex } = action.payload;
@@ -241,15 +265,17 @@ function quoteReducer(state, action, { productFactory, configManager }) {
                     items[rowIndex] = { ...item, fabricType: nextType, linePrice: null, fabric: '', color: '' };
                     changedIndexes.push(rowIndex);
                 }
+                newItems = items;
             } else if (action.type === QUOTE_ACTION_TYPES.SET_ITEM_TYPE) {
                 const { rowIndex, newType } = action.payload;
-                if (items[rowIndex].fabricType !== newType) {
+                if (items[rowIndex] && items[rowIndex].fabricType !== newType) {
                     items[rowIndex] = { ...items[rowIndex], fabricType: newType, linePrice: null, fabric: '', color: '' };
                     changedIndexes.push(rowIndex);
                 }
+                newItems = items;
             } else if (action.type === QUOTE_ACTION_TYPES.BATCH_UPDATE_FABRIC_TYPE) {
                 const { newType } = action.payload;
-                items = items.map((item, index) => {
+                newItems = items.map((item, index) => {
                     if (item.width && item.height && item.fabricType !== newType) {
                         changedIndexes.push(index);
                         return { ...item, fabricType: newType, linePrice: null, fabric: '', color: '' };
@@ -258,7 +284,7 @@ function quoteReducer(state, action, { productFactory, configManager }) {
                 });
             } else if (action.type === QUOTE_ACTION_TYPES.BATCH_UPDATE_FABRIC_TYPE_FOR_SELECTION) {
                 const { selectedIndexes, newType } = action.payload;
-                items = items.map((item, index) => {
+                newItems = items.map((item, index) => {
                     if (selectedIndexes.includes(index) && item.width && item.height && item.fabricType !== newType) {
                         changedIndexes.push(index);
                         return { ...item, fabricType: newType, linePrice: null, fabric: '', color: '' };
@@ -271,7 +297,7 @@ function quoteReducer(state, action, { productFactory, configManager }) {
                 const modifiedIndexes = new Set(state.uiMetadata.lfModifiedRowIndexes);
                 changedIndexes.forEach(index => modifiedIndexes.delete(index));
                 const newUiMetadata = { ...state.uiMetadata, lfModifiedRowIndexes: Array.from(modifiedIndexes) };
-                productData = { ...productData, items };
+                productData = { ...productData, items: newItems };
                 return { ...state, products: { ...state.products, [productKey]: productData }, uiMetadata: newUiMetadata };
             }
             return state;
