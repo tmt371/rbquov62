@@ -8,6 +8,34 @@
 import { UI_ACTION_TYPES, QUOTE_ACTION_TYPES } from '../config/action-types.js';
 import { initialState } from '../config/initial-state.js';
 
+function _consolidateEmptyRows(items, productFactory, productKey) {
+    let newItems = [...items];
+    if (!newItems || newItems.length === 0) return [];
+
+    // Remove redundant empty rows from the end
+    while (newItems.length > 1) {
+        const lastItem = newItems[newItems.length - 1];
+        const secondLastItem = newItems[newItems.length - 2];
+        const isLastItemEmpty = !lastItem.width && !lastItem.height && !lastItem.fabricType;
+        const isSecondLastItemEmpty = !secondLastItem.width && !secondLastItem.height && !secondLastItem.fabricType;
+
+        if (isLastItemEmpty && isSecondLastItemEmpty) {
+            newItems.pop();
+        } else {
+            break;
+        }
+    }
+
+    // Ensure there is always one empty row at the end
+    const lastItem = newItems[newItems.length - 1];
+    if (lastItem && (lastItem.width || lastItem.height)) {
+        const productStrategy = productFactory.getProductStrategy(productKey);
+        newItems.push(productStrategy.getInitialItemData());
+    }
+    
+    return newItems;
+}
+
 function uiReducer(state, action) {
     switch (action.type) {
         case UI_ACTION_TYPES.SET_CURRENT_VIEW:
@@ -118,16 +146,76 @@ function uiReducer(state, action) {
     }
 }
 
-// NOTE: This reducer is more complex because it deals with nested state and arrays.
-function quoteReducer(state, action, productFactory, configManager) {
+function quoteReducer(state, action, { productFactory, configManager }) {
     const productKey = state.currentProduct;
-    const productData = state.products[productKey];
-    
+    let productData = state.products[productKey];
+    let items;
+
     switch (action.type) {
-        // Reducers for array manipulations
-        // ... (Cases for INSERT_ROW, DELETE_ROW, etc. will be added here)
-        // Reducers for item property updates
-        // ... (Cases for UPDATE_ITEM_VALUE, etc. will be added here)
+        case QUOTE_ACTION_TYPES.SET_QUOTE_DATA:
+            return action.payload.newQuoteData;
+
+        case QUOTE_ACTION_TYPES.RESET_QUOTE_DATA:
+            return JSON.parse(JSON.stringify(initialState.quoteData));
+
+        case QUOTE_ACTION_TYPES.INSERT_ROW: {
+            items = [...productData.items];
+            const productStrategy = productFactory.getProductStrategy(productKey);
+            const newItem = productStrategy.getInitialItemData();
+            items.splice(action.payload.selectedIndex + 1, 0, newItem);
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
+
+        case QUOTE_ACTION_TYPES.DELETE_ROW: {
+            items = [...productData.items];
+            const { selectedIndex } = action.payload;
+            const itemToDelete = items[selectedIndex];
+            if (!itemToDelete) return state;
+
+            const isLastPopulatedRow = selectedIndex === items.length - 2 && items.length > 1 && !items[items.length - 1].width && !items[items.length-1].height;
+
+            if (isLastPopulatedRow || items.length === 1) {
+                const productStrategy = productFactory.getProductStrategy(productKey);
+                const newItem = productStrategy.getInitialItemData();
+                newItem.itemId = itemToDelete.itemId;
+                items[selectedIndex] = newItem;
+            } else {
+                items.splice(selectedIndex, 1);
+            }
+            items = _consolidateEmptyRows(items, productFactory, productKey);
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
+        
+        case QUOTE_ACTION_TYPES.UPDATE_ITEM_VALUE: {
+            items = [...productData.items];
+            const { rowIndex, column, value } = action.payload;
+            const targetItem = items[rowIndex];
+            if (!targetItem || targetItem[column] === value) return state;
+            
+            const newItem = { ...targetItem, [column]: value };
+
+            if ((column === 'width' || column === 'height') && newItem.width && newItem.height) {
+                const logicThresholds = configManager.getLogicThresholds();
+                if (logicThresholds && (newItem.width * newItem.height) > logicThresholds.hdWinderThresholdArea && !newItem.motor) {
+                    newItem.winder = 'HD';
+                }
+            }
+            items[rowIndex] = newItem;
+            items = _consolidateEmptyRows(items, productFactory, productKey);
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
+
+        case QUOTE_ACTION_TYPES.UPDATE_ACCESSORY_SUMMARY: {
+            const summary = productData.summary;
+            const newAccessories = { ...summary.accessories, ...action.payload.data };
+            const newSummary = { ...summary, accessories: newAccessories };
+            productData = { ...productData, summary: newSummary };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
+
         default:
             return state;
     }
@@ -145,7 +233,7 @@ export function createRootReducer(dependencies) {
         }
 
         if (action.type.startsWith('quote/')) {
-            const newQuoteState = quoteReducer(state.quoteData, action, productFactory, configManager);
+            const newQuoteState = quoteReducer(state.quoteData, action, { productFactory, configManager });
             if (newQuoteState !== state.quoteData) {
                 return { ...state, quoteData: newQuoteState };
             }

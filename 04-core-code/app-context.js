@@ -48,6 +48,9 @@ export class AppContext {
         const configManager = new ConfigManager(eventAggregator);
         this.register('configManager', configManager);
 
+        const productFactory = new ProductFactory({ configManager });
+        this.register('productFactory', productFactory);
+
         let initialStateWithData = JSON.parse(JSON.stringify(initialState));
         if (startingQuoteData) {
             initialStateWithData.quoteData = startingQuoteData;
@@ -55,12 +58,11 @@ export class AppContext {
 
         const stateService = new StateService({
             initialState: initialStateWithData,
-            eventAggregator
+            eventAggregator,
+            productFactory,
+            configManager
         });
         this.register('stateService', stateService);
-
-        const productFactory = new ProductFactory({ configManager });
-        this.register('productFactory', productFactory);
 
         const quoteService = new QuoteService({
             stateService,
