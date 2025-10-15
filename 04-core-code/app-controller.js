@@ -1,9 +1,7 @@
 // File: 04-core-code/app-controller.js
 
-import { initialState } from './config/initial-state.js';
-import { EVENTS } from './config/constants.js';
+import { EVENTS, STORAGE_KEYS } from './config/constants.js';
 
-const AUTOSAVE_STORAGE_KEY = 'quoteAutoSaveData';
 const AUTOSAVE_INTERVAL_MS = 60000;
 
 export class AppController {
@@ -142,7 +140,7 @@ export class AppController {
             const hasContent = items.length > 1 || (items.length === 1 && (items[0].width || items[0].height));
             if (hasContent) {
                 const dataToSave = JSON.stringify(quoteData);
-                localStorage.setItem(AUTOSAVE_STORAGE_KEY, dataToSave);
+                localStorage.setItem(STORAGE_KEYS.AUTOSAVE, dataToSave);
             }
         } catch (error) {
             console.error('Auto-save failed:', error);

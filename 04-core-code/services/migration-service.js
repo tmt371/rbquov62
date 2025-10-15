@@ -1,8 +1,7 @@
 // File: 04-core-code/services/migration-service.js
 
 import { initialState } from '../config/initial-state.js';
-
-const AUTOSAVE_STORAGE_KEY = 'quoteAutoSaveData';
+import { STORAGE_KEYS } from '../config/constants.js';
 
 export class MigrationService {
     constructor() {}
@@ -13,7 +12,7 @@ export class MigrationService {
      */
     loadAndMigrateData() {
         try {
-            const autoSavedDataJSON = localStorage.getItem(AUTOSAVE_STORAGE_KEY);
+            const autoSavedDataJSON = localStorage.getItem(STORAGE_KEYS.AUTOSAVE);
             if (!autoSavedDataJSON) {
                 return null;
             }
@@ -28,15 +27,15 @@ export class MigrationService {
                     return migratedData;
                 } else {
                     console.error("Could not restore auto-saved data: format is unrecognized.");
-                    localStorage.removeItem(AUTOSAVE_STORAGE_KEY);
+                    localStorage.removeItem(STORAGE_KEYS.AUTOSAVE);
                 }
             } else {
-                localStorage.removeItem(AUTOSAVE_STORAGE_KEY);
+                localStorage.removeItem(STORAGE_KEYS.AUTOSAVE);
                 console.log("Auto-saved data discarded by user.");
             }
         } catch (error) {
             console.error("Failed to process auto-saved data:", error);
-            localStorage.removeItem(AUTOSAVE_STORAGE_KEY);
+            localStorage.removeItem(STORAGE_KEYS.AUTOSAVE);
         }
         return null;
     }
