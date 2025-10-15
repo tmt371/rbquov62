@@ -157,7 +157,7 @@ function quoteReducer(state, action, { productFactory, configManager }) {
 
         case QUOTE_ACTION_TYPES.RESET_QUOTE_DATA:
             return JSON.parse(JSON.stringify(initialState.quoteData));
-
+        
         case QUOTE_ACTION_TYPES.INSERT_ROW: {
             items = [...productData.items];
             const productStrategy = productFactory.getProductStrategy(productKey);
@@ -167,27 +167,6 @@ function quoteReducer(state, action, { productFactory, configManager }) {
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
 
-        case QUOTE_ACTION_TYPES.DELETE_ROW: {
-            items = [...productData.items];
-            const { selectedIndex } = action.payload;
-            const itemToDelete = items[selectedIndex];
-            if (!itemToDelete) return state;
-
-            const isLastPopulatedRow = selectedIndex === items.length - 2 && items.length > 1 && !items[items.length - 1].width && !items[items.length-1].height;
-
-            if (isLastPopulatedRow || items.length === 1) {
-                const productStrategy = productFactory.getProductStrategy(productKey);
-                const newItem = productStrategy.getInitialItemData();
-                newItem.itemId = itemToDelete.itemId;
-                items[selectedIndex] = newItem;
-            } else {
-                items.splice(selectedIndex, 1);
-            }
-            items = _consolidateEmptyRows(items, productFactory, productKey);
-            productData = { ...productData, items };
-            return { ...state, products: { ...state.products, [productKey]: productData } };
-        }
-        
         case QUOTE_ACTION_TYPES.UPDATE_ITEM_VALUE: {
             items = [...productData.items];
             const { rowIndex, column, value } = action.payload;
@@ -208,6 +187,24 @@ function quoteReducer(state, action, { productFactory, configManager }) {
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
 
+        case QUOTE_ACTION_TYPES.CYCLE_ITEM_TYPE: {
+            items = [...productData.items];
+            const { rowIndex } = action.payload;
+            const item = items[rowIndex];
+            if (!item || (!item.width && !item.height)) return state;
+
+            const TYPE_SEQUENCE = configManager.getFabricTypeSequence();
+            if (TYPE_SEQUENCE.length === 0) return state;
+
+            const currentType = item.fabricType || TYPE_SEQUENCE[TYPE_SEQUENCE.length - 1];
+            const currentIndex = TYPE_SEQUENCE.indexOf(currentType);
+            const nextType = TYPE_SEQUENCE[(currentIndex + 1) % TYPE_SEQUENCE.length];
+            
+            items[rowIndex] = { ...item, fabricType: nextType, linePrice: null, fabric: '', color: '' };
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
+
         case QUOTE_ACTION_TYPES.UPDATE_ACCESSORY_SUMMARY: {
             const summary = productData.summary;
             const newAccessories = { ...summary.accessories, ...action.payload.data };
@@ -215,7 +212,7 @@ function quoteReducer(state, action, { productFactory, configManager }) {
             productData = { ...productData, summary: newSummary };
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
-
+        
         default:
             return state;
     }

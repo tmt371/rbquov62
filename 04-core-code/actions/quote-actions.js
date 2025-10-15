@@ -58,6 +58,12 @@ export const cycleK3Property = (rowIndex, column) => ({
     payload: { rowIndex, column },
 });
 
+// [FIX] Add missing action creator
+export const cycleItemType = (rowIndex) => ({
+    type: QUOTE_ACTION_TYPES.CYCLE_ITEM_TYPE,
+    payload: { rowIndex },
+});
+
 export const setItemType = (rowIndex, newType) => ({
     type: QUOTE_ACTION_TYPES.SET_ITEM_TYPE,
     payload: { rowIndex, newType },

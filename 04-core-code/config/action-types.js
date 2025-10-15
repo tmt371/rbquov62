@@ -67,6 +67,7 @@ export const QUOTE_ACTION_TYPES = {
     UPDATE_ITEM_PROPERTY: 'quote/updateItemProperty',
     UPDATE_WINDER_MOTOR_PROPERTY: 'quote/updateWinderMotorProperty',
     CYCLE_K3_PROPERTY: 'quote/cycleK3Property',
+    CYCLE_ITEM_TYPE: 'quote/cycleItemType', // [FIX] Add missing action type
     SET_ITEM_TYPE: 'quote/setItemType',
 
     // Batch Item Updates

@@ -78,7 +78,8 @@ export class FocusService {
         
         column = navigableColumns[columnIndex];
         this.uiService.setActiveCell(rowIndex, column);
-        this.uiService.clearRowSelection();
+        // [FIX] Corrected the method name to match the refactored UIService API.
+        this.uiService.clearMultiSelectSelection();
         
         const currentItem = items[rowIndex];
         if (currentItem && (column === 'width' || column === 'height')) {

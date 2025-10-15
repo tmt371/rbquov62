@@ -32,6 +32,7 @@ export class QuoteService {
     updateItemProperty(rowIndex, property, value) { this._dispatch(quoteActions.updateItemProperty(rowIndex, property, value)); }
     updateWinderMotorProperty(rowIndex, property, value) { this._dispatch(quoteActions.updateWinderMotorProperty(rowIndex, property, value)); }
     cycleK3Property(rowIndex, column) { this._dispatch(quoteActions.cycleK3Property(rowIndex, column)); }
+    cycleItemType(rowIndex) { this._dispatch(quoteActions.cycleItemType(rowIndex)); } // [FIX] Re-add the method as an action dispatcher.
     setItemType(rowIndex, newType) { this._dispatch(quoteActions.setItemType(rowIndex, newType)); }
 
     // --- Batch Item Updates ---
