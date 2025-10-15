@@ -118,17 +118,16 @@ function uiReducer(state, action) {
     }
 }
 
-function quoteReducer(state, action, { productFactory, configManager }) {
+// NOTE: This reducer is more complex because it deals with nested state and arrays.
+function quoteReducer(state, action, productFactory, configManager) {
     const productKey = state.currentProduct;
     const productData = state.products[productKey];
-
+    
     switch (action.type) {
-        case QUOTE_ACTION_TYPES.SET_QUOTE_DATA:
-            return action.payload.newQuoteData;
-        case QUOTE_ACTION_TYPES.RESET_QUOTE_DATA:
-            return JSON.parse(JSON.stringify(initialState.quoteData));
-        
-        // Other cases will require modifying nested state...
+        // Reducers for array manipulations
+        // ... (Cases for INSERT_ROW, DELETE_ROW, etc. will be added here)
+        // Reducers for item property updates
+        // ... (Cases for UPDATE_ITEM_VALUE, etc. will be added here)
         default:
             return state;
     }
@@ -146,7 +145,7 @@ export function createRootReducer(dependencies) {
         }
 
         if (action.type.startsWith('quote/')) {
-            const newQuoteState = quoteReducer(state.quoteData, action, { productFactory, configManager });
+            const newQuoteState = quoteReducer(state.quoteData, action, productFactory, configManager);
             if (newQuoteState !== state.quoteData) {
                 return { ...state, quoteData: newQuoteState };
             }
