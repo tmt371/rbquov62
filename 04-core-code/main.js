@@ -5,7 +5,7 @@ import { MigrationService } from './services/migration-service.js';
 import { UIManager } from './ui/ui-manager.js';
 import { InputHandler } from './ui/input-handler.js';
 import { paths } from './config/paths.js';
-import { EVENTS } from './config/constants.js';
+import { EVENTS, DOM_IDS } from './config/constants.js';
 
 class App {
     constructor() {
@@ -40,7 +40,7 @@ class App {
     
         await loadPartial(paths.partials.leftPanel, document.body);
         
-        const functionPanel = document.getElementById('function-panel');
+        const functionPanel = document.getElementById(DOM_IDS.FUNCTION_PANEL);
         if (functionPanel) {
             await loadPartial(paths.partials.rightPanel, functionPanel, 'innerHTML');
         }
@@ -57,7 +57,7 @@ class App {
         const appController = this.appContext.get('appController');
 
         this.uiManager = new UIManager(
-            document.getElementById('app'),
+            document.getElementById(DOM_IDS.APP),
             eventAggregator,
             calculationService
         );

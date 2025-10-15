@@ -1,7 +1,7 @@
 /**
  * @fileoverview A dedicated component for managing and rendering the Right Panel UI.
  */
-import { EVENTS } from '../config/constants.js';
+import { EVENTS, DOM_IDS } from '../config/constants.js';
 
 export class RightPanelComponent {
     constructor(panelElement, eventAggregator, calculationService) {
@@ -34,7 +34,7 @@ export class RightPanelComponent {
             });
         }
 
-        const panelToggle = document.getElementById('function-panel-toggle');
+        const panelToggle = document.getElementById(DOM_IDS.FUNCTION_PANEL_TOGGLE);
         if (panelToggle) {
             panelToggle.addEventListener('click', () => {
                 // When the panel is toggled, check if F1 is the active tab and refresh it.
@@ -86,35 +86,35 @@ export class RightPanelComponent {
         const query = (id) => this.panelElement.querySelector(id);
         this.f1 = {
             inputs: {
-                'discount': query('#f1-rb-discount-input'),
+                'discount': query(`#${DOM_IDS.F1_RB_DISCOUNT_INPUT}`),
             },
             displays: {
                 qty: {
-                    'winder': query('#f1-qty-winder'),
-                    'motor': query('#f1-qty-motor'),
-                    'remote-1ch': query('#f1-qty-remote-1ch'),
-                    'remote-16ch': query('#f1-qty-remote-16ch'),
-                    'charger': query('#f1-qty-charger'),
-                    '3m-cord': query('#f1-qty-3m-cord'),
-                    'dual-combo': query('#f1-qty-dual-combo'),
-                    'slim': query('#f1-qty-slim'),
+                    'winder': query(`#${DOM_IDS.F1_QTY_WINDER}`),
+                    'motor': query(`#${DOM_IDS.F1_QTY_MOTOR}`),
+                    'remote-1ch': query(`#${DOM_IDS.F1_QTY_REMOTE_1CH}`),
+                    'remote-16ch': query(`#${DOM_IDS.F1_QTY_REMOTE_16CH}`),
+                    'charger': query(`#${DOM_IDS.F1_QTY_CHARGER}`),
+                    '3m-cord': query(`#${DOM_IDS.F1_QTY_3M_CORD}`),
+                    'dual-combo': query(`#${DOM_IDS.F1_QTY_DUAL_COMBO}`),
+                    'slim': query(`#${DOM_IDS.F1_QTY_SLIM}`),
                 },
                 price: {
-                    'winder': query('#f1-price-winder'),
-                    'motor': query('#f1-price-motor'),
-                    'remote-1ch': query('#f1-price-remote-1ch'),
-                    'remote-16ch': query('#f1-price-remote-16ch'),
-                    'charger': query('#f1-price-charger'),
-                    '3m-cord': query('#f1-price-3m-cord'),
-                    'dual-combo': query('#f1-price-dual-combo'),
-                    'slim': query('#f1-price-slim'),
-                    'total': query('#f1-price-total'),
-                    'rb-retail': query('#f1-rb-retail'),
-                    'rb-discount-amount': query('#f1-rb-discount-amount'),
-                    'rb-price': query('#f1-rb-price'),
-                    'sub-total': query('#f1-sub-total'),
-                    'gst': query('#f1-gst'),
-                    'final-total': query('#f1-final-total'),
+                    'winder': query(`#${DOM_IDS.F1_PRICE_WINDER}`),
+                    'motor': query(`#${DOM_IDS.F1_PRICE_MOTOR}`),
+                    'remote-1ch': query(`#${DOM_IDS.F1_PRICE_REMOTE_1CH}`),
+                    'remote-16ch': query(`#${DOM_IDS.F1_PRICE_REMOTE_16CH}`),
+                    'charger': query(`#${DOM_IDS.F1_PRICE_CHARGER}`),
+                    '3m-cord': query(`#${DOM_IDS.F1_PRICE_3M_CORD}`),
+                    'dual-combo': query(`#${DOM_IDS.F1_PRICE_DUAL_COMBO}`),
+                    'slim': query(`#${DOM_IDS.F1_PRICE_SLIM}`),
+                    'total': query(`#${DOM_IDS.F1_PRICE_TOTAL}`),
+                    'rb-retail': query(`#${DOM_IDS.F1_RB_RETAIL}`),
+                    'rb-discount-amount': query(`#${DOM_IDS.F1_RB_DISCOUNT_AMOUNT}`),
+                    'rb-price': query(`#${DOM_IDS.F1_RB_PRICE}`),
+                    'sub-total': query(`#${DOM_IDS.F1_SUB_TOTAL}`),
+                    'gst': query(`#${DOM_IDS.F1_GST}`),
+                    'final-total': query(`#${DOM_IDS.F1_FINAL_TOTAL}`),
                 }
             }
         };

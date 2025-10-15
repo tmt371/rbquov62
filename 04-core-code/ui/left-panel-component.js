@@ -1,5 +1,7 @@
 // File: 04-core-code/ui/left-panel-component.js
 
+import { DOM_IDS } from '../config/constants.js';
+
 /**
  * @fileoverview A dedicated component for managing and rendering the Left Panel UI.
  */
@@ -9,11 +11,11 @@ export class LeftPanelComponent {
             throw new Error("Panel element is required for LeftPanelComponent.");
         }
         this.panelElement = panelElement;
-        this.panelToggle = document.getElementById('left-panel-toggle');
+        this.panelToggle = document.getElementById(DOM_IDS.LEFT_PANEL_TOGGLE);
 
         // Cache all DOM elements in the constructor.
         this.locationButton = document.getElementById('btn-focus-location');
-        this.locationInput = document.getElementById('location-input-box');
+        this.locationInput = document.getElementById(DOM_IDS.LOCATION_INPUT_BOX);
         this.fabricColorButton = document.getElementById('btn-focus-fabric');
         this.lfButton = document.getElementById('btn-light-filter');
         this.lfDelButton = document.getElementById('btn-lf-del');

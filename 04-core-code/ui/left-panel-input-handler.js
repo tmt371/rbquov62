@@ -1,6 +1,6 @@
 // File: 04-core-code/ui/left-panel-input-handler.js
 
-import { EVENTS } from '../config/constants.js';
+import { EVENTS, DOM_IDS } from '../config/constants.js';
 
 /**
  * @fileoverview A dedicated input handler for all user interactions within the Left Panel.
@@ -22,7 +22,7 @@ export class LeftPanelInputHandler {
     }
 
     _setupNavigationToggle() {
-        const leftPanelToggle = document.getElementById('left-panel-toggle');
+        const leftPanelToggle = document.getElementById(DOM_IDS.LEFT_PANEL_TOGGLE);
         if (leftPanelToggle) {
             leftPanelToggle.addEventListener('click', () => {
                 this.eventAggregator.publish(EVENTS.USER_NAVIGATED_TO_DETAIL_VIEW);
@@ -50,7 +50,7 @@ export class LeftPanelInputHandler {
             });
         }
 
-        const locationInput = document.getElementById('location-input-box');
+        const locationInput = document.getElementById(DOM_IDS.LOCATION_INPUT_BOX);
         if (locationInput) {
             locationInput.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter') {
@@ -83,7 +83,7 @@ export class LeftPanelInputHandler {
             });
         }
 
-        const batchTable = document.getElementById('fabric-batch-table');
+        const batchTable = document.getElementById(DOM_IDS.FABRIC_BATCH_TABLE);
         if (batchTable) {
             batchTable.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' && event.target.matches('.panel-input')) {

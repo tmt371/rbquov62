@@ -1,7 +1,7 @@
 // File: 04-core-code/ui/input-handler.js
 
 import { LeftPanelInputHandler } from './left-panel-input-handler.js';
-import { EVENTS } from '../config/constants.js';
+import { EVENTS, DOM_IDS } from '../config/constants.js';
 
 export class InputHandler {
     constructor(eventAggregator) {
@@ -61,7 +61,7 @@ export class InputHandler {
     }
 
     _setupFileLoader() {
-        const fileLoader = document.getElementById('file-loader');
+        const fileLoader = document.getElementById(DOM_IDS.FILE_LOADER);
         if (fileLoader) {
             fileLoader.addEventListener('change', (event) => {
                 const file = event.target.files[0];
@@ -86,7 +86,7 @@ export class InputHandler {
     }
     
     _setupPanelToggles() {
-        const numericToggle = document.getElementById('panel-toggle');
+        const numericToggle = document.getElementById(DOM_IDS.PANEL_TOGGLE);
         if (numericToggle) {
             numericToggle.addEventListener('click', () => {
                 this.eventAggregator.publish(EVENTS.USER_TOGGLED_NUMERIC_KEYBOARD);
@@ -106,11 +106,11 @@ export class InputHandler {
 
         // These are buttons located outside the main grid (e.g., in the top control bar)
         setupButton('key-reset', EVENTS.USER_REQUESTED_RESET);
-        setupButton('key-m-set', EVENTS.USER_REQUESTED_MULTI_TYPE_SET);
+        setupButton(DOM_IDS.KEY_M_SET, EVENTS.USER_REQUESTED_MULTI_TYPE_SET);
     }
     
     _setupNumericKeyboard() {
-        const keyboard = document.getElementById('numeric-keyboard');
+        const keyboard = document.getElementById(DOM_IDS.NUMERIC_KEYBOARD);
         if (!keyboard) return;
 
         const addLongPressSupport = (button, longPressEventName, clickEventName, data = {}) => {
@@ -171,12 +171,11 @@ export class InputHandler {
         addButtonListener('key-enter', EVENTS.NUMERIC_KEY_PRESSED, { key: 'ENT' });
         addButtonListener('key-clear', EVENTS.USER_REQUESTED_CLEAR_ROW);
 
-        // [NEW] Added listener for the new grid-based insert button
-        addButtonListener('key-ins-grid', EVENTS.USER_REQUESTED_INSERT_ROW);
+        addButtonListener(DOM_IDS.KEY_INS_GRID, EVENTS.USER_REQUESTED_INSERT_ROW);
     }
 
     _setupTableInteraction() {
-        const table = document.getElementById('results-table');
+        const table = document.getElementById(DOM_IDS.RESULTS_TABLE);
         if (table) {
             const startPress = (e) => {
                 const target = e.target;

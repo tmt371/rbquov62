@@ -1,7 +1,7 @@
 // File: 04-core-code/services/workflow-service.js
 
 import { initialState } from '../config/initial-state.js';
-import { EVENTS } from '../config/constants.js';
+import { EVENTS, DOM_IDS } from '../config/constants.js';
 
 /**
  * @fileoverview A dedicated service for coordinating complex, multi-step user workflows.
@@ -38,9 +38,9 @@ export class WorkflowService {
             layout: [
                 [
                     { type: 'text', text: '1-Ch Qty:', className: 'dialog-label' },
-                    { type: 'input', id: 'dialog-input-1ch', value: initial1ch },
+                    { type: 'input', id: DOM_IDS.DIALOG_INPUT_1CH, value: initial1ch },
                     { type: 'text', text: '16-Ch Qty:', className: 'dialog-label' },
-                    { type: 'input', id: 'dialog-input-16ch', value: initial16ch }
+                    { type: 'input', id: DOM_IDS.DIALOG_INPUT_16CH, value: initial16ch }
                 ],
                 [
                     {
@@ -49,8 +49,8 @@ export class WorkflowService {
                         className: 'primary-confirm-button',
                         colspan: 2,
                         callback: () => {
-                            const qty1ch = parseInt(document.getElementById('dialog-input-1ch').value, 10);
-                            const qty16ch = parseInt(document.getElementById('dialog-input-16ch').value, 10);
+                            const qty1ch = parseInt(document.getElementById(DOM_IDS.DIALOG_INPUT_1CH).value, 10);
+                            const qty16ch = parseInt(document.getElementById(DOM_IDS.DIALOG_INPUT_16CH).value, 10);
 
                             if (isNaN(qty1ch) || isNaN(qty16ch) || qty1ch < 0 || qty16ch < 0) {
                                 this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Quantities must be positive numbers.', type: 'error' });
@@ -73,8 +73,8 @@ export class WorkflowService {
                 ]
             ],
             onOpen: () => {
-                const input1ch = document.getElementById('dialog-input-1ch');
-                const input16ch = document.getElementById('dialog-input-16ch');
+                const input1ch = document.getElementById(DOM_IDS.DIALOG_INPUT_1CH);
+                const input16ch = document.getElementById(DOM_IDS.DIALOG_INPUT_16CH);
 
                 input1ch.addEventListener('input', () => {
                     const qty1ch = parseInt(input1ch.value, 10);
@@ -112,9 +112,9 @@ export class WorkflowService {
             layout: [
                 [
                     { type: 'text', text: 'Combo Qty:', className: 'dialog-label' },
-                    { type: 'input', id: 'dialog-input-combo', value: initialCombo },
+                    { type: 'input', id: DOM_IDS.DIALOG_INPUT_COMBO, value: initialCombo },
                     { type: 'text', text: 'Slim Qty:', className: 'dialog-label' },
-                    { type: 'input', id: 'dialog-input-slim', value: initialSlim }
+                    { type: 'input', id: DOM_IDS.DIALOG_INPUT_SLIM, value: initialSlim }
                 ],
                 [
                     {
@@ -123,8 +123,8 @@ export class WorkflowService {
                         className: 'primary-confirm-button',
                         colspan: 2,
                         callback: () => {
-                            const qtyCombo = parseInt(document.getElementById('dialog-input-combo').value, 10);
-                            const qtySlim = parseInt(document.getElementById('dialog-input-slim').value, 10);
+                            const qtyCombo = parseInt(document.getElementById(DOM_IDS.DIALOG_INPUT_COMBO).value, 10);
+                            const qtySlim = parseInt(document.getElementById(DOM_IDS.DIALOG_INPUT_SLIM).value, 10);
     
                             if (isNaN(qtyCombo) || isNaN(qtySlim) || qtyCombo < 0 || qtySlim < 0) {
                                 this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Quantities must be positive numbers.', type: 'error' });
@@ -147,8 +147,8 @@ export class WorkflowService {
                 ]
             ],
             onOpen: () => {
-                const inputCombo = document.getElementById('dialog-input-combo');
-                const inputSlim = document.getElementById('dialog-input-slim');
+                const inputCombo = document.getElementById(DOM_IDS.DIALOG_INPUT_COMBO);
+                const inputSlim = document.getElementById(DOM_IDS.DIALOG_INPUT_SLIM);
     
                 inputSlim.addEventListener('input', () => {
                     const qtySlim = parseInt(inputSlim.value, 10);

@@ -7,7 +7,7 @@ import { NotificationComponent } from './notification-component.js';
 import { DialogComponent } from './dialog-component.js';
 import { LeftPanelComponent } from './left-panel-component.js';
 import { RightPanelComponent } from './right-panel-component.js';
-import { EVENTS } from '../config/constants.js';
+import { EVENTS, DOM_IDS } from '../config/constants.js';
 
 export class UIManager {
     constructor(appElement, eventAggregator, calculationService) {
@@ -15,42 +15,42 @@ export class UIManager {
         this.eventAggregator = eventAggregator;
         this.calculationService = calculationService;
 
-        this.numericKeyboardPanel = document.getElementById('numeric-keyboard-panel');
+        this.numericKeyboardPanel = document.getElementById(DOM_IDS.NUMERIC_KEYBOARD_PANEL);
         
         this.insertButton = document.getElementById('key-ins');
         this.clearButton = document.getElementById('key-clear');
         
-        this.leftPanelElement = document.getElementById('left-panel');
+        this.leftPanelElement = document.getElementById(DOM_IDS.LEFT_PANEL);
 
-        const tableElement = document.getElementById('results-table');
+        const tableElement = document.getElementById(DOM_IDS.RESULTS_TABLE);
         this.tableComponent = new TableComponent(tableElement);
 
-        const summaryElement = document.getElementById('total-sum-value');
+        const summaryElement = document.getElementById(DOM_IDS.TOTAL_SUM_VALUE);
         this.summaryComponent = new SummaryComponent(summaryElement);
 
         this.leftPanelComponent = new LeftPanelComponent(this.leftPanelElement);
 
         this.functionPanel = new PanelComponent({
-            panelElement: document.getElementById('function-panel'),
-            toggleElement: document.getElementById('function-panel-toggle'),
+            panelElement: document.getElementById(DOM_IDS.FUNCTION_PANEL),
+            toggleElement: document.getElementById(DOM_IDS.FUNCTION_PANEL_TOGGLE),
             eventAggregator: this.eventAggregator,
             expandedClass: 'is-expanded',
             retractEventName: EVENTS.OPERATION_SUCCESSFUL_AUTO_HIDE_PANEL
         });
         
         this.rightPanelComponent = new RightPanelComponent(
-            document.getElementById('function-panel'),
+            document.getElementById(DOM_IDS.FUNCTION_PANEL),
             this.eventAggregator,
             this.calculationService
         );
 
         this.notificationComponent = new NotificationComponent({
-            containerElement: document.getElementById('toast-container'),
+            containerElement: document.getElementById(DOM_IDS.TOAST_CONTAINER),
             eventAggregator: this.eventAggregator
         });
 
         this.dialogComponent = new DialogComponent({
-            overlayElement: document.getElementById('confirmation-dialog-overlay'),
+            overlayElement: document.getElementById(DOM_IDS.CONFIRMATION_DIALOG_OVERLAY),
             eventAggregator: this.eventAggregator
         });
 

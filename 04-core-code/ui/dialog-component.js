@@ -1,6 +1,6 @@
 // /04-core-code/ui/dialog-component.js
 
-import { EVENTS } from '../config/constants.js';
+import { EVENTS, DOM_IDS } from '../config/constants.js';
 
 /**
  * @fileoverview A generic, configurable component to manage confirmation dialogs.
