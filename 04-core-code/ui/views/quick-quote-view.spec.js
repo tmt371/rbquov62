@@ -10,6 +10,7 @@ describe('QuickQuoteView', () => {
     let mockUiService;
     let mockEventAggregator;
     let mockFocusService;
+    let mockProductFactory; // [FIX] Declare mock for productFactory
 
     beforeEach(() => {
         // Arrange: Create mock dependencies for the QuickQuoteView constructor.
@@ -34,6 +35,10 @@ describe('QuickQuoteView', () => {
         mockFocusService = {
             focusAfterDelete: jest.fn(),
         };
+        // [FIX] Create a proper mock for productFactory with the required method.
+        mockProductFactory = {
+            getProductStrategy: jest.fn(),
+        };
 
         // Arrange: Instantiate the view with all its dependencies mocked.
         quickQuoteView = new QuickQuoteView({
@@ -42,9 +47,9 @@ describe('QuickQuoteView', () => {
             uiService: mockUiService,
             eventAggregator: mockEventAggregator,
             focusService: mockFocusService,
+            productFactory: mockProductFactory, // [FIX] Pass the new mock
             // These are not used in the tested methods but are required by the constructor.
             fileService: {},
-            productFactory: {},
             configManager: {},
             publishStateChangeCallback: jest.fn(),
         });
@@ -78,6 +83,8 @@ describe('QuickQuoteView', () => {
             const mockSuccessResult = { updatedQuoteData: mockQuoteData, firstError: null };
             mockQuoteService.getQuoteData.mockReturnValue(mockQuoteData);
             mockCalculationService.calculateAndSum.mockReturnValue(mockSuccessResult);
+            // [FIX] Ensure getProductStrategy returns a mock strategy object.
+            mockProductFactory.getProductStrategy.mockReturnValue({});
 
             // Act: Call the method.
             quickQuoteView.handleCalculateAndSum();
@@ -95,6 +102,8 @@ describe('QuickQuoteView', () => {
             const mockErrorResult = { updatedQuoteData: mockQuoteData, firstError: mockError };
             mockQuoteService.getQuoteData.mockReturnValue(mockQuoteData);
             mockCalculationService.calculateAndSum.mockReturnValue(mockErrorResult);
+            // [FIX] Ensure getProductStrategy returns a mock strategy object.
+            mockProductFactory.getProductStrategy.mockReturnValue({});
 
             // Act: Call the method.
             quickQuoteView.handleCalculateAndSum();
