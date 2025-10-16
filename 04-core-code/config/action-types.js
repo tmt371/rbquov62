@@ -37,6 +37,16 @@ export const UI_ACTION_TYPES = {
     SET_DRIVE_ACCESSORY_TOTAL_PRICE: 'ui/setDriveAccessoryTotalPrice',
     SET_DRIVE_GRAND_TOTAL: 'ui/setDriveGrandTotal',
     
+    // --- [FIX] Add new action types for K5 view ---
+    SET_DUAL_PRICE: 'ui/setDualPrice',
+    CLEAR_DUAL_CHAIN_INPUT_VALUE: 'ui/clearDualChainInputValue',
+    SET_SUMMARY_WINDER_PRICE: 'ui/setSummaryWinderPrice',
+    SET_SUMMARY_MOTOR_PRICE: 'ui/setSummaryMotorPrice',
+    SET_SUMMARY_REMOTE_PRICE: 'ui/setSummaryRemotePrice',
+    SET_SUMMARY_CHARGER_PRICE: 'ui/setSummaryChargerPrice',
+    SET_SUMMARY_CORD_PRICE: 'ui/setSummaryCordPrice',
+    SET_SUMMARY_ACCESSORIES_TOTAL: 'ui/setSummaryAccessoriesTotal',
+    
     // F1 Financial Overview State
     SET_F1_REMOTE_DISTRIBUTION: 'ui/setF1RemoteDistribution',
     SET_F1_DUAL_DISTRIBUTION: 'ui/setF1DualDistribution',
@@ -67,7 +77,7 @@ export const QUOTE_ACTION_TYPES = {
     UPDATE_ITEM_PROPERTY: 'quote/updateItemProperty',
     UPDATE_WINDER_MOTOR_PROPERTY: 'quote/updateWinderMotorProperty',
     CYCLE_K3_PROPERTY: 'quote/cycleK3Property',
-    CYCLE_ITEM_TYPE: 'quote/cycleItemType', // [FIX] Add missing action type
+    CYCLE_ITEM_TYPE: 'quote/cycleItemType',
     SET_ITEM_TYPE: 'quote/setItemType',
 
     // Batch Item Updates

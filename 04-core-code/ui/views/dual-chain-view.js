@@ -40,6 +40,7 @@ export class DualChainView {
         
         if (!newMode) {
             this.uiService.setTargetCell(null);
+            // [FIX] Correctly call the action creator to clear the input value.
             this.uiService.clearDualChainInputValue();
         }
 
@@ -59,6 +60,7 @@ export class DualChainView {
         
         // Store the price in the core data service and the UI service.
         this.quoteService.updateAccessorySummary({ dualCostSum: price });
+        // [FIX] Correctly call the action creator to set the dual price.
         this.uiService.setDualPrice(price);
         
         // Immediately trigger a recalculation of the grand total on the K5 summary.
@@ -123,6 +125,7 @@ export class DualChainView {
         this.quoteService.updateItemProperty(currentTarget.rowIndex, currentTarget.column, valueToSave);
         
         this.uiService.setTargetCell(null);
+        // [FIX] Correctly call the action creator to clear the input value.
         this.uiService.clearDualChainInputValue();
         this.publish();
     }
@@ -152,7 +155,8 @@ export class DualChainView {
 
         if (dualChainMode === 'chain' && column === 'chain') {
             this.uiService.setTargetCell({ rowIndex, column: 'chain' });
-            this.uiService.setDualChainInputValue(item.chain || '');
+            // [FIX] This action creator doesn't exist; the logic is handled by setting the target cell.
+            // this.uiService.setDualChainInputValue(item.chain || '');
             this.publish();
 
             setTimeout(() => {
@@ -171,7 +175,8 @@ export class DualChainView {
         this.uiService.setVisibleColumns(['sequence', 'fabricTypeDisplay', 'location', 'dual', 'chain']);
         
         const currentState = this.uiService.getState();
-        const currentProductData = this.quoteService.getCurrentProductData();
+        // [FIX] Corrected method name from getCurrentProductData to getQuoteData.
+        const currentQuoteData = this.quoteService.getQuoteData();
 
         // [FIX] These crucial lines synchronize the prices from the K4 view state into the K5 summary state.
         this.uiService.setSummaryWinderPrice(currentState.driveWinderTotalPrice);
@@ -179,7 +184,7 @@ export class DualChainView {
         this.uiService.setSummaryRemotePrice(currentState.driveRemoteTotalPrice);
         this.uiService.setSummaryChargerPrice(currentState.driveChargerTotalPrice);
         this.uiService.setSummaryCordPrice(currentState.driveCordTotalPrice);
-        this.uiService.setDualPrice(currentProductData.summary.accessories.dualCostSum);
+        this.uiService.setDualPrice(currentQuoteData.products[currentQuoteData.currentProduct].summary.accessories.dualCostSum);
 
         // After synchronizing, calculate the grand total.
         this._updateSummaryAccessoriesTotal();

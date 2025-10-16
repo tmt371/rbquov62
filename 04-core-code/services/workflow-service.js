@@ -178,8 +178,8 @@ export class WorkflowService {
         const productStrategy = this.productFactory.getProductStrategy(quoteData.currentProduct);
         const { updatedQuoteData } = this.calculationService.calculateAndSum(quoteData, productStrategy);
         
-        const currentState = this.stateService.getState();
-        this.stateService.updateState({ ...currentState, quoteData: updatedQuoteData });
+        // [FIX] Replace direct state update with action dispatch.
+        this.quoteService.setQuoteData(updatedQuoteData);
     }
 
     handleF2TabActivation() {
@@ -187,8 +187,8 @@ export class WorkflowService {
         const productStrategy = this.productFactory.getProductStrategy(quoteData.currentProduct);
         const { updatedQuoteData } = this.calculationService.calculateAndSum(quoteData, productStrategy);
         
-        const currentState = this.stateService.getState();
-        this.stateService.updateState({ ...currentState, quoteData: updatedQuoteData });
+        // [FIX] Replace direct state update with action dispatch.
+        this.quoteService.setQuoteData(updatedQuoteData);
         
         this.detailConfigView.driveAccessoriesView.recalculateAllDriveAccessoryPrices();
         this.detailConfigView.dualChainView._calculateAndStoreDualPrice();
@@ -233,12 +233,10 @@ export class WorkflowService {
     handleFileLoad({ fileName, content }) {
         const result = this.fileService.parseFileContent(fileName, content);
         if (result.success) {
-            const currentState = this.stateService.getState();
-            this.stateService.updateState({
-                ...currentState,
-                quoteData: result.data,
-                ui: { ...initialState.ui, isSumOutdated: true }
-            });
+            // [FIX] Replace direct state update with action dispatches.
+            this.quoteService.setQuoteData(result.data);
+            this.uiService.reset();
+            this.uiService.setSumOutdated(true);
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: result.message });
         } else {
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: result.message, type: 'error' });

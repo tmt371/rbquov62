@@ -128,8 +128,10 @@ export class DetailConfigView {
     }
 
     handleTableCellClick({ rowIndex, column }) {
+        // [FIX] Correctly destructure 'driveAccessoryMode' instead of the non-existent 'driveAccessoriesView' from state.
         const { activeEditMode, dualChainMode, driveAccessoryMode } = this.uiService.getState();
         
+        // [FIX] The condition now correctly checks the 'driveAccessoryMode' state property to see if a K4 mode is active.
         if (driveAccessoryMode) {
             this.driveAccessoriesView.handleTableCellClick({ rowIndex, column });
             return;

@@ -115,6 +115,23 @@ function uiReducer(state, action) {
         }
         case UI_ACTION_TYPES.SET_DRIVE_GRAND_TOTAL:
             return { ...state, driveGrandTotal: action.payload.price };
+        // --- [FIX] Add reducers for new K5 actions ---
+        case UI_ACTION_TYPES.SET_DUAL_PRICE:
+            return { ...state, dualPrice: action.payload.price };
+        case UI_ACTION_TYPES.CLEAR_DUAL_CHAIN_INPUT_VALUE:
+            return { ...state, dualChainInputValue: '' };
+        case UI_ACTION_TYPES.SET_SUMMARY_WINDER_PRICE:
+            return { ...state, summaryWinderPrice: action.payload.price };
+        case UI_ACTION_TYPES.SET_SUMMARY_MOTOR_PRICE:
+            return { ...state, summaryMotorPrice: action.payload.price };
+        case UI_ACTION_TYPES.SET_SUMMARY_REMOTE_PRICE:
+            return { ...state, summaryRemotePrice: action.payload.price };
+        case UI_ACTION_TYPES.SET_SUMMARY_CHARGER_PRICE:
+            return { ...state, summaryChargerPrice: action.payload.price };
+        case UI_ACTION_TYPES.SET_SUMMARY_CORD_PRICE:
+            return { ...state, summaryCordPrice: action.payload.price };
+        case UI_ACTION_TYPES.SET_SUMMARY_ACCESSORIES_TOTAL:
+            return { ...state, summaryAccessoriesTotal: action.payload.price };
         case UI_ACTION_TYPES.SET_F1_REMOTE_DISTRIBUTION:
             return { ...state, f1: { ...state.f1, remote_1ch_qty: action.payload.qty1, remote_16ch_qty: action.payload.qty16 } };
         case UI_ACTION_TYPES.SET_F1_DUAL_DISTRIBUTION:
@@ -220,6 +237,14 @@ function quoteReducer(state, action, { productFactory, configManager }) {
             productData = { ...productData, items };
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
+        
+        // --- [FIX] Add all missing case blocks from original QuoteService ---
+        
+        case QUOTE_ACTION_TYPES.BATCH_UPDATE_PROPERTY: {
+            items = productData.items.map(item => ({ ...item, [action.payload.property]: action.payload.value }));
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
 
         case QUOTE_ACTION_TYPES.BATCH_UPDATE_PROPERTY_BY_TYPE: {
             items = [...productData.items];
@@ -244,6 +269,45 @@ function quoteReducer(state, action, { productFactory, configManager }) {
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
         
+        case QUOTE_ACTION_TYPES.UPDATE_WINDER_MOTOR_PROPERTY: {
+            items = [...productData.items];
+            const { rowIndex, property, value } = action.payload;
+            const item = items[rowIndex];
+            if (!item || item[property] === value) return state;
+
+            const newItem = { ...item, [property]: value };
+            if (property === 'winder' && value) newItem.motor = '';
+            if (property === 'motor' && value) newItem.winder = '';
+            
+            items[rowIndex] = newItem;
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
+
+        case QUOTE_ACTION_TYPES.CYCLE_K3_PROPERTY: {
+            items = [...productData.items];
+            const { rowIndex, column } = action.payload;
+            const item = items[rowIndex];
+            if (!item) return state;
+
+            const BATCH_CYCLE_SEQUENCES = {
+                over: ['O', ''],
+                oi: ['IN', 'OUT'],
+                lr: ['L', 'R']
+            };
+            const sequence = BATCH_CYCLE_SEQUENCES[column];
+            if (!sequence) return state;
+
+            const currentValue = item[column] || '';
+            const currentIndex = sequence.indexOf(currentValue);
+            const nextIndex = (currentIndex + 1) % sequence.length;
+            const nextValue = sequence[nextIndex];
+
+            items[rowIndex] = { ...item, [column]: nextValue };
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
+
         case QUOTE_ACTION_TYPES.CYCLE_ITEM_TYPE:
         case QUOTE_ACTION_TYPES.SET_ITEM_TYPE:
         case QUOTE_ACTION_TYPES.BATCH_UPDATE_FABRIC_TYPE:
@@ -274,7 +338,13 @@ function quoteReducer(state, action, { productFactory, configManager }) {
                 }
                 newItems = items;
             } else if (action.type === QUOTE_ACTION_TYPES.BATCH_UPDATE_FABRIC_TYPE) {
-                const { newType } = action.payload;
+                let { newType } = action.payload;
+                if (newType === undefined) { // This handles the cycle-all case from the 'Type' button
+                    const firstItem = items.find(item => item.width && item.height);
+                    const currentType = firstItem ? (firstItem.fabricType || TYPE_SEQUENCE[TYPE_SEQUENCE.length - 1]) : TYPE_SEQUENCE[TYPE_SEQUENCE.length - 1];
+                    const currentIndex = TYPE_SEQUENCE.indexOf(currentType);
+                    newType = TYPE_SEQUENCE[(currentIndex + 1) % TYPE_SEQUENCE.length];
+                }
                 newItems = items.map((item, index) => {
                     if (item.width && item.height && item.fabricType !== newType) {
                         changedIndexes.push(index);
@@ -301,6 +371,41 @@ function quoteReducer(state, action, { productFactory, configManager }) {
                 return { ...state, products: { ...state.products, [productKey]: productData }, uiMetadata: newUiMetadata };
             }
             return state;
+        }
+
+        case QUOTE_ACTION_TYPES.BATCH_UPDATE_LF_PROPERTIES: {
+            const { rowIndexes, fabricName, fabricColor } = action.payload;
+            items = productData.items.map((item, index) => {
+                if (rowIndexes.includes(index)) {
+                    return { ...item, fabric: fabricName, color: fabricColor };
+                }
+                return item;
+            });
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
+
+        case QUOTE_ACTION_TYPES.REMOVE_LF_PROPERTIES: {
+            const { rowIndexes } = action.payload;
+            items = productData.items.map((item, index) => {
+                if (rowIndexes.includes(index)) {
+                    return { ...item, fabric: '', color: '' };
+                }
+                return item;
+            });
+            productData = { ...productData, items };
+            return { ...state, products: { ...state.products, [productKey]: productData } };
+        }
+
+        case QUOTE_ACTION_TYPES.ADD_LF_MODIFIED_ROWS: {
+            const modifiedIndexes = new Set([...state.uiMetadata.lfModifiedRowIndexes, ...action.payload.rowIndexes]);
+            return { ...state, uiMetadata: { ...state.uiMetadata, lfModifiedRowIndexes: Array.from(modifiedIndexes) } };
+        }
+
+        case QUOTE_ACTION_TYPES.REMOVE_LF_MODIFIED_ROWS: {
+            const indexesToRemove = new Set(action.payload.rowIndexes);
+            const newModifiedIndexes = state.uiMetadata.lfModifiedRowIndexes.filter(i => !indexesToRemove.has(i));
+            return { ...state, uiMetadata: { ...state.uiMetadata, lfModifiedRowIndexes: newModifiedIndexes } };
         }
 
         case QUOTE_ACTION_TYPES.UPDATE_ACCESSORY_SUMMARY: {

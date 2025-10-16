@@ -112,6 +112,47 @@ export const setDriveGrandTotal = (price) => ({
     payload: { price },
 });
 
+// --- [FIX] Add new action creators for K5 view ---
+export const setDualPrice = (price) => ({
+    type: UI_ACTION_TYPES.SET_DUAL_PRICE,
+    payload: { price },
+});
+
+export const clearDualChainInputValue = () => ({
+    type: UI_ACTION_TYPES.CLEAR_DUAL_CHAIN_INPUT_VALUE,
+});
+
+export const setSummaryWinderPrice = (price) => ({
+    type: UI_ACTION_TYPES.SET_SUMMARY_WINDER_PRICE,
+    payload: { price },
+});
+
+export const setSummaryMotorPrice = (price) => ({
+    type: UI_ACTION_TYPES.SET_SUMMARY_MOTOR_PRICE,
+    payload: { price },
+});
+
+export const setSummaryRemotePrice = (price) => ({
+    type: UI_ACTION_TYPES.SET_SUMMARY_REMOTE_PRICE,
+    payload: { price },
+});
+
+export const setSummaryChargerPrice = (price) => ({
+    type: UI_ACTION_TYPES.SET_SUMMARY_CHARGER_PRICE,
+    payload: { price },
+});
+
+export const setSummaryCordPrice = (price) => ({
+    type: UI_ACTION_TYPES.SET_SUMMARY_CORD_PRICE,
+    payload: { price },
+});
+
+export const setSummaryAccessoriesTotal = (price) => ({
+    type: UI_ACTION_TYPES.SET_SUMMARY_ACCESSORIES_TOTAL,
+    payload: { price },
+});
+
+
 // --- F1/F2 State ---
 export const setF1RemoteDistribution = (qty1, qty16) => ({
     type: UI_ACTION_TYPES.SET_F1_REMOTE_DISTRIBUTION,
