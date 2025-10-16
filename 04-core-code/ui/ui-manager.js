@@ -17,7 +17,7 @@ export class UIManager {
 
         this.numericKeyboardPanel = document.getElementById(DOM_IDS.NUMERIC_KEYBOARD_PANEL);
         
-        this.insertButton = document.getElementById('key-ins');
+        this.insertButton = document.getElementById('key-ins-grid'); // Corrected ID from 'key-ins'
         this.clearButton = document.getElementById('key-clear');
         
         this.leftPanelElement = document.getElementById(DOM_IDS.LEFT_PANEL);
@@ -150,7 +150,15 @@ _updateExpandedPanelPosition() {
         if (this.insertButton) this.insertButton.disabled = insertDisabled;
         
         // --- Clear Button Logic ---
-        const clearDisabled = !isSingleSelection;
+        let clearDisabled = !isSingleSelection; // Disable if not a single selection
+        if (isSingleSelection) {
+            const selectedIndex = multiSelectSelectedIndexes[0];
+            const itemsLength = items.length;
+            // Also disable if it's the last data row or the final empty row
+            if (selectedIndex >= itemsLength - 2) {
+                clearDisabled = true;
+            }
+        }
         if (this.clearButton) this.clearButton.disabled = clearDisabled;
     }
     

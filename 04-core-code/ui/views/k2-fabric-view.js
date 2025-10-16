@@ -202,15 +202,17 @@ export class K2FabricView {
         const fColorInput = document.querySelector('input[data-type="LF"][data-field="color"]');
         
         if (fNameInput && fColorInput && fNameInput.value && fColorInput.value) {
-            this.stateService.dispatch(quoteActions.batchUpdateLFProperties(lfSelectedRowIndexes, fNameInput.value, fColorInput.value));
+            const fabricNameWithPrefix = `Light-filter ${fNameInput.value}`;
+            this.stateService.dispatch(quoteActions.batchUpdateLFProperties(lfSelectedRowIndexes, fabricNameWithPrefix, fColorInput.value));
             this.stateService.dispatch(quoteActions.addLFModifiedRows(lfSelectedRowIndexes));
         }
     }
 
     _updatePanelInputsState() {
-        const { ui } = this._getState();
+        const { ui, quoteData } = this._getState();
         const { activeEditMode, lfSelectedRowIndexes } = ui;
         const items = this._getItems();
+        const { lfModifiedRowIndexes } = quoteData.uiMetadata;
         const presentTypes = new Set(items.map(item => item.fabricType).filter(Boolean));
         
         const allPanelInputs = document.querySelectorAll('.panel-input');
@@ -229,7 +231,9 @@ export class K2FabricView {
                         if (!firstEnabledInput) {
                             firstEnabledInput = input;
                         }
-                        const itemWithData = items.find(item => item.fabricType === type && typeof item[field] === 'string');
+                        const itemWithData = items.find((item, index) => 
+                            item.fabricType === type && !lfModifiedRowIndexes.includes(index)
+                        );
                         input.value = itemWithData ? itemWithData[field] : '';
                     } else {
                         input.value = '';

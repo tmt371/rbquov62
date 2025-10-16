@@ -115,7 +115,6 @@ function uiReducer(state, action) {
         }
         case UI_ACTION_TYPES.SET_DRIVE_GRAND_TOTAL:
             return { ...state, driveGrandTotal: action.payload.price };
-        // --- [FIX] Add reducers for new K5 actions ---
         case UI_ACTION_TYPES.SET_DUAL_PRICE:
             return { ...state, dualPrice: action.payload.price };
         case UI_ACTION_TYPES.CLEAR_DUAL_CHAIN_INPUT_VALUE:
@@ -238,10 +237,13 @@ function quoteReducer(state, action, { productFactory, configManager }) {
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
         
-        // --- [FIX] Add all missing case blocks from original QuoteService ---
-        
         case QUOTE_ACTION_TYPES.BATCH_UPDATE_PROPERTY: {
-            items = productData.items.map(item => ({ ...item, [action.payload.property]: action.payload.value }));
+            items = productData.items.map((item, index) => {
+                if (index === productData.items.length - 1) {
+                    return item; // Exclude the last (empty backup) row from batch updates.
+                }
+                return { ...item, [action.payload.property]: action.payload.value };
+            });
             productData = { ...productData, items };
             return { ...state, products: { ...state.products, [productKey]: productData } };
         }
@@ -339,7 +341,7 @@ function quoteReducer(state, action, { productFactory, configManager }) {
                 newItems = items;
             } else if (action.type === QUOTE_ACTION_TYPES.BATCH_UPDATE_FABRIC_TYPE) {
                 let { newType } = action.payload;
-                if (newType === undefined) { // This handles the cycle-all case from the 'Type' button
+                if (newType === undefined) { 
                     const firstItem = items.find(item => item.width && item.height);
                     const currentType = firstItem ? (firstItem.fabricType || TYPE_SEQUENCE[TYPE_SEQUENCE.length - 1]) : TYPE_SEQUENCE[TYPE_SEQUENCE.length - 1];
                     const currentIndex = TYPE_SEQUENCE.indexOf(currentType);
