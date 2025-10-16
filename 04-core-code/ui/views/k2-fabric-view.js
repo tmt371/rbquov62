@@ -232,7 +232,7 @@ export class K2FabricView {
                             firstEnabledInput = input;
                         }
                         const itemWithData = items.find((item, index) => 
-                            item.fabricType === type && !lfModifiedRowIndexes.includes(index)
+                            item.fabricType === type && !this.indexesToExcludeFromBatchUpdate.has(index)
                         );
                         input.value = itemWithData ? itemWithData[field] : '';
                     } else {

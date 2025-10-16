@@ -6,20 +6,21 @@
 
 /**
  * Converts the application's quote data object into a comprehensive CSV formatted string,
- * including all detailed item properties.
+ * including all detailed item properties and LF status.
  * @param {object} quoteData The application's quote data.
  * @returns {string} A string in CSV format.
  */
 export function dataToCsv(quoteData) {
     const currentProductKey = quoteData?.currentProduct;
     const productData = quoteData?.products?.[currentProductKey];
+    const lfModifiedRowIndexes = quoteData?.uiMetadata?.lfModifiedRowIndexes || [];
 
     if (!productData || !productData.items) return "";
 
     const headers = [
         '#', 'Width', 'Height', 'Type', 'Price', 
         'Location', 'F-Name', 'F-Color', 'Over', 'O/I', 'L/R', 
-        'Dual', 'Chain', 'Winder', 'Motor'
+        'Dual', 'Chain', 'Winder', 'Motor', 'IsLF'
     ];
     
     const rows = productData.items.map((item, index) => {
@@ -39,7 +40,8 @@ export function dataToCsv(quoteData) {
                 item.dual || '',
                 item.chain || '',
                 item.winder || '',
-                item.motor || ''
+                item.motor || '',
+                lfModifiedRowIndexes.includes(index) ? 1 : 0
             ];
             return rowData.map(value => {
                 const strValue = String(value);
@@ -63,10 +65,10 @@ export function dataToCsv(quoteData) {
 
 
 /**
- * [REFACTORED] Converts a CSV formatted string into an array of item objects.
- * This function is now "pure" and has no external dependencies.
+ * Converts a CSV formatted string into an object containing item objects and LF indexes.
+ * This function is "pure" and has no external dependencies.
  * @param {string} csvString The string containing CSV data.
- * @returns {Array<object>|null} An array of item objects, or null if parsing fails.
+ * @returns {{items: Array<object>, lfIndexes: Array<number>}|null} An object with items and their LF status, or null if parsing fails.
  */
 export function csvToData(csvString) {
     try {
@@ -77,10 +79,11 @@ export function csvToData(csvString) {
         const dataLines = lines.slice(headerIndex + 1);
 
         const items = [];
+        const lfIndexes = [];
         for (const line of dataLines) {
             const trimmedLine = line.trim();
             if (!trimmedLine || trimmedLine.toLowerCase().startsWith('total')) {
-                continue; // Skip empty lines and summary rows
+                continue;
             }
             
             const values = trimmedLine.split(',');
@@ -103,11 +106,14 @@ export function csvToData(csvString) {
                 motor: values[14] || ''
             };
             items.push(item);
+            
+            const isLf = parseInt(values[15], 10) === 1;
+            if (isLf) {
+                lfIndexes.push(items.length - 1);
+            }
         }
 
-        // [REMOVED] The logic for adding a final empty row has been moved to FileService.
-        // This function now only returns the parsed items.
-        return items;
+        return { items, lfIndexes };
 
     } catch (error) {
         console.error("Failed to parse CSV string:", error);

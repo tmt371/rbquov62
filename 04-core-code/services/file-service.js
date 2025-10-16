@@ -66,10 +66,12 @@ export class FileService {
             if (fileName.toLowerCase().endsWith('.json')) {
                 loadedData = JSON.parse(content);
             } else if (fileName.toLowerCase().endsWith('.csv')) {
-                const items = csvToData(content);
-                if (items === null) {
+                const parsedResult = csvToData(content);
+                if (parsedResult === null) {
                     throw new Error("CSV parser returned null.");
                 }
+
+                const { items, lfIndexes } = parsedResult;
 
                 const productStrategy = this.productFactory.getProductStrategy('rollerBlind');
                 const newItem = productStrategy.getInitialItemData();
@@ -77,13 +79,13 @@ export class FileService {
 
                 const newQuoteData = JSON.parse(JSON.stringify(initialState.quoteData));
                 newQuoteData.products.rollerBlind.items = items;
+                newQuoteData.uiMetadata.lfModifiedRowIndexes = lfIndexes;
                 loadedData = newQuoteData;
                 
             } else {
                 return { success: false, message: `Unsupported file type: ${fileName}` };
             }
 
-            // [ADDED] Safeguard for old save files that do not have the uiMetadata property.
             if (loadedData && !loadedData.uiMetadata) {
                 loadedData.uiMetadata = {
                     lfModifiedRowIndexes: []
