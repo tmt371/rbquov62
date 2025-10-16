@@ -2,17 +2,17 @@
 
 import { initialState } from '../config/initial-state.js';
 import { EVENTS, DOM_IDS } from '../config/constants.js';
+import * as uiActions from '../actions/ui-actions.js';
+import * as quoteActions from '../actions/quote-actions.js';
 
 /**
  * @fileoverview A dedicated service for coordinating complex, multi-step user workflows.
  * This service takes complex procedural logic out of the AppController.
  */
 export class WorkflowService {
-    constructor({ eventAggregator, stateService, uiService, quoteService, fileService, calculationService, productFactory, detailConfigView }) {
+    constructor({ eventAggregator, stateService, fileService, calculationService, productFactory, detailConfigView }) {
         this.eventAggregator = eventAggregator;
         this.stateService = stateService;
-        this.uiService = uiService;
-        this.quoteService = quoteService;
         this.fileService = fileService;
         this.calculationService = calculationService;
         this.productFactory = productFactory;
@@ -65,7 +65,7 @@ export class WorkflowService {
                                 return false;
                             }
 
-                            this.uiService.setF1RemoteDistribution(qty1ch, qty16ch);
+                            this.stateService.dispatch(uiActions.setF1RemoteDistribution(qty1ch, qty16ch));
                             return true;
                         }
                     },
@@ -139,7 +139,7 @@ export class WorkflowService {
                                 return false;
                             }
     
-                            this.uiService.setF1DualDistribution(qtyCombo, qtySlim);
+                            this.stateService.dispatch(uiActions.setF1DualDistribution(qtyCombo, qtySlim));
                             return true;
                         }
                     },
@@ -178,8 +178,7 @@ export class WorkflowService {
         const productStrategy = this.productFactory.getProductStrategy(quoteData.currentProduct);
         const { updatedQuoteData } = this.calculationService.calculateAndSum(quoteData, productStrategy);
         
-        // [FIX] Replace direct state update with action dispatch.
-        this.quoteService.setQuoteData(updatedQuoteData);
+        this.stateService.dispatch(quoteActions.setQuoteData(updatedQuoteData));
     }
 
     handleF2TabActivation() {
@@ -187,8 +186,7 @@ export class WorkflowService {
         const productStrategy = this.productFactory.getProductStrategy(quoteData.currentProduct);
         const { updatedQuoteData } = this.calculationService.calculateAndSum(quoteData, productStrategy);
         
-        // [FIX] Replace direct state update with action dispatch.
-        this.quoteService.setQuoteData(updatedQuoteData);
+        this.stateService.dispatch(quoteActions.setQuoteData(updatedQuoteData));
         
         this.detailConfigView.driveAccessoriesView.recalculateAllDriveAccessoryPrices();
         this.detailConfigView.dualChainView._calculateAndStoreDualPrice();
@@ -201,17 +199,17 @@ export class WorkflowService {
     handleNavigationToDetailView() {
         const { ui } = this.stateService.getState();
         if (ui.currentView === 'QUICK_QUOTE') {
-            this.uiService.setCurrentView('DETAIL_CONFIG');
+            this.stateService.dispatch(uiActions.setCurrentView('DETAIL_CONFIG'));
             this.detailConfigView.activateTab('k1-tab'); 
         } else {
-            this.uiService.setCurrentView('QUICK_QUOTE');
-            this.uiService.setVisibleColumns(initialState.ui.visibleColumns);
+            this.stateService.dispatch(uiActions.setCurrentView('QUICK_QUOTE'));
+            this.stateService.dispatch(uiActions.setVisibleColumns(initialState.ui.visibleColumns));
         }
     }
 
     handleNavigationToQuickQuoteView() {
-        this.uiService.setCurrentView('QUICK_QUOTE');
-        this.uiService.setVisibleColumns(initialState.ui.visibleColumns);
+        this.stateService.dispatch(uiActions.setCurrentView('QUICK_QUOTE'));
+        this.stateService.dispatch(uiActions.setVisibleColumns(initialState.ui.visibleColumns));
     }
 
     handleTabSwitch({ tabId }) {
@@ -219,7 +217,12 @@ export class WorkflowService {
     }
 
     handleUserRequestedLoad() {
-        if (this.quoteService.hasData()) {
+        const { quoteData } = this.stateService.getState();
+        const productKey = quoteData.currentProduct;
+        const items = quoteData.products[productKey] ? quoteData.products[productKey].items : [];
+        const hasData = items.length > 1 || (items.length === 1 && (items[0].width || items[0].height));
+
+        if (hasData) {
             this.eventAggregator.publish(EVENTS.SHOW_LOAD_CONFIRMATION_DIALOG);
         } else {
             this.eventAggregator.publish(EVENTS.TRIGGER_FILE_LOAD);
@@ -233,10 +236,9 @@ export class WorkflowService {
     handleFileLoad({ fileName, content }) {
         const result = this.fileService.parseFileContent(fileName, content);
         if (result.success) {
-            // [FIX] Replace direct state update with action dispatches.
-            this.quoteService.setQuoteData(result.data);
-            this.uiService.reset();
-            this.uiService.setSumOutdated(true);
+            this.stateService.dispatch(quoteActions.setQuoteData(result.data));
+            this.stateService.dispatch(uiActions.resetUi());
+            this.stateService.dispatch(uiActions.setSumOutdated(true));
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: result.message });
         } else {
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: result.message, type: 'error' });
@@ -244,12 +246,11 @@ export class WorkflowService {
     }
 
     handleF1DiscountChange({ percentage }) {
-        this.uiService.setF1DiscountPercentage(percentage);
-        this.eventAggregator.publish(EVENTS.STATE_CHANGED, this.stateService.getState());
+        this.stateService.dispatch(uiActions.setF1DiscountPercentage(percentage));
     }
 
     handleToggleFeeExclusion({ feeType }) {
-        this.uiService.toggleF2FeeExclusion(feeType);
+        this.stateService.dispatch(uiActions.toggleF2FeeExclusion(feeType));
         this._calculateF2Summary();
     }
 
@@ -267,7 +268,7 @@ export class WorkflowService {
         }
 
         if (keyToUpdate) {
-            this.uiService.setF2Value(keyToUpdate, numericValue);
+            this.stateService.dispatch(uiActions.setF2Value(keyToUpdate, numericValue));
             this._calculateF2Summary();
         }
     }
@@ -286,7 +287,7 @@ export class WorkflowService {
         const summaryValues = this.calculationService.calculateF2Summary(quoteData, ui);
 
         for (const key in summaryValues) {
-            this.uiService.setF2Value(key, summaryValues[key]);
+            this.stateService.dispatch(uiActions.setF2Value(key, summaryValues[key]));
         }
     }
 }

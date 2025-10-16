@@ -1,14 +1,20 @@
 // File: 04-core-code/ui/views/k1-location-view.js
+import * as uiActions from '../../actions/ui-actions.js';
+import * as quoteActions from '../../actions/quote-actions.js';
 
 /**
  * @fileoverview A dedicated sub-view for handling all logic related to the K1 (Location) tab.
  */
 export class K1LocationView {
-    constructor({ quoteService, uiService, publishStateChangeCallback }) {
-        this.quoteService = quoteService;
-        this.uiService = uiService;
+    constructor({ stateService, publishStateChangeCallback }) {
+        this.stateService = stateService;
         this.publish = publishStateChangeCallback;
         console.log("K1LocationView Initialized.");
+    }
+
+    _getItems() {
+        const { quoteData } = this.stateService.getState();
+        return quoteData.products[quoteData.currentProduct].items;
     }
 
     /**
@@ -16,7 +22,8 @@ export class K1LocationView {
      * This is typically triggered by the '#Location' button.
      */
     handleFocusModeRequest() {
-        const currentMode = this.uiService.getState().activeEditMode;
+        const { ui } = this.stateService.getState();
+        const currentMode = ui.activeEditMode;
         const newMode = currentMode === 'K1' ? null : 'K1';
         this._toggleLocationEditMode(newMode);
     }
@@ -27,14 +34,14 @@ export class K1LocationView {
      * @private
      */
     _toggleLocationEditMode(newMode) {
-        this.uiService.setActiveEditMode(newMode);
+        this.stateService.dispatch(uiActions.setActiveEditMode(newMode));
 
         if (newMode) {
             const targetRow = 0;
-            this.uiService.setTargetCell({ rowIndex: targetRow, column: 'location' });
+            this.stateService.dispatch(uiActions.setTargetCell({ rowIndex: targetRow, column: 'location' }));
             
-            const currentItem = this.quoteService.getItems()[targetRow];
-            this.uiService.setLocationInputValue(currentItem.location || '');
+            const currentItem = this._getItems()[targetRow];
+            this.stateService.dispatch(uiActions.setLocationInputValue(currentItem.location || ''));
             
             const locationInput = document.getElementById('location-input-box');
             setTimeout(() => {
@@ -42,10 +49,9 @@ export class K1LocationView {
                 locationInput?.select();
             }, 50);
         } else {
-            this.uiService.setTargetCell(null);
-            this.uiService.setLocationInputValue('');
+            this.stateService.dispatch(uiActions.setTargetCell(null));
+            this.stateService.dispatch(uiActions.setLocationInputValue(''));
         }
-        this.publish();
     }
 
     /**
@@ -53,21 +59,22 @@ export class K1LocationView {
      * @param {object} data - The event data containing the value.
      */
     handleLocationInputEnter({ value }) {
-        const { targetCell } = this.uiService.getState();
+        const { ui } = this.stateService.getState();
+        const { targetCell } = ui;
         if (!targetCell) return;
 
-        this.quoteService.updateItemProperty(targetCell.rowIndex, targetCell.column, value);
+        this.stateService.dispatch(quoteActions.updateItemProperty(targetCell.rowIndex, targetCell.column, value));
 
         const nextRowIndex = targetCell.rowIndex + 1;
-        const totalRows = this.quoteService.getItems().length;
+        const totalRows = this._getItems().length;
         const locationInput = document.getElementById('location-input-box');
 
         // Move to the next row if it's not the last empty row
         if (nextRowIndex < totalRows - 1) {
-            this.uiService.setTargetCell({ rowIndex: nextRowIndex, column: 'location' });
-            const nextItem = this.quoteService.getItems()[nextRowIndex];
-            this.uiService.setLocationInputValue(nextItem.location || '');
-            this.publish();
+            this.stateService.dispatch(uiActions.setTargetCell({ rowIndex: nextRowIndex, column: 'location' }));
+            const nextItem = this._getItems()[nextRowIndex];
+            this.stateService.dispatch(uiActions.setLocationInputValue(nextItem.location || ''));
+            
             // Refocus and select the input for continuous entry
             setTimeout(() => locationInput?.select(), 0);
         } else {
@@ -82,10 +89,9 @@ export class K1LocationView {
      */
     handleTableCellClick({ rowIndex }) {
         // Update the target cell to the clicked row
-        this.uiService.setTargetCell({ rowIndex, column: 'location' });
-        const item = this.quoteService.getItems()[rowIndex];
-        this.uiService.setLocationInputValue(item.location || '');
-        this.publish();
+        this.stateService.dispatch(uiActions.setTargetCell({ rowIndex, column: 'location' }));
+        const item = this._getItems()[rowIndex];
+        this.stateService.dispatch(uiActions.setLocationInputValue(item.location || ''));
         
         const locationInput = document.getElementById('location-input-box');
         setTimeout(() => {
@@ -98,8 +104,6 @@ export class K1LocationView {
      * This method is called by the main DetailConfigView when the K1 tab becomes active.
      */
     activate() {
-        // Set the visible columns for the K1 tab
-        this.uiService.setVisibleColumns(['sequence', 'fabricTypeDisplay', 'location']);
-        // [REFACTOR] The publish call is now centralized in DetailConfigView's activateTab method.
+        this.stateService.dispatch(uiActions.setVisibleColumns(['sequence', 'fabricTypeDisplay', 'location']));
     }
 }

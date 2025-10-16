@@ -1,4 +1,5 @@
 // /04-core-code/services/focus-service.js
+import * as uiActions from '../actions/ui-actions.js';
 
 /**
  * @fileoverview Service for managing input focus and active cell logic.
@@ -6,12 +7,10 @@
 export class FocusService {
     /**
      * @param {object} dependencies - The service dependencies.
-     * @param {UIService} dependencies.uiService - The UI state management service.
-     * @param {QuoteService} dependencies.quoteService - The quote data management service.
+     * @param {StateService} dependencies.stateService - The main state management service.
      */
-    constructor({ uiService, quoteService }) {
-        this.uiService = uiService;
-        this.quoteService = quoteService;
+    constructor({ stateService }) {
+        this.stateService = stateService;
         console.log("FocusService (Context-Aware) Initialized.");
     }
 
@@ -20,12 +19,13 @@ export class FocusService {
      * @param {string} column - 'width' or 'height'.
      */
     focusFirstEmptyCell(column) {
-        const items = this.quoteService.getItems();
+        const { quoteData } = this.stateService.getState();
+        const items = quoteData.products[quoteData.currentProduct].items;
         const firstEmptyIndex = items.findIndex(item => !item[column]);
         const targetIndex = (firstEmptyIndex !== -1) ? firstEmptyIndex : items.length - 1;
 
-        this.uiService.setActiveCell(targetIndex, column);
-        this.uiService.setInputValue('');
+        this.stateService.dispatch(uiActions.setActiveCell(targetIndex, column));
+        this.stateService.dispatch(uiActions.setInputValue(''));
     }
 
     /**
@@ -39,20 +39,21 @@ export class FocusService {
      * Moves focus to the width cell of the new last row after a deletion.
      */
     focusAfterDelete() {
-        const lastIndex = this.quoteService.getItems().length - 1;
-        this.uiService.setActiveCell(lastIndex, 'width');
+        const { quoteData } = this.stateService.getState();
+        const lastIndex = quoteData.products[quoteData.currentProduct].items.length - 1;
+        this.stateService.dispatch(uiActions.setActiveCell(lastIndex, 'width'));
     }
 
     /**
      * [MODIFIED] Moves focus to the width cell of the cleared row using the correct state property.
      */
     focusAfterClear() {
-        // [FIX] Changed from obsolete 'selectedRowIndex' to 'multiSelectSelectedIndexes'.
-        const { multiSelectSelectedIndexes } = this.uiService.getState();
-        // The calling context (handleClearRow) already ensures the length is 1.
+        const { ui } = this.stateService.getState();
+        const { multiSelectSelectedIndexes } = ui;
+        
         if (multiSelectSelectedIndexes.length === 1) {
             const rowIndex = multiSelectSelectedIndexes[0];
-            this.uiService.setActiveCell(rowIndex, 'width');
+            this.stateService.dispatch(uiActions.setActiveCell(rowIndex, 'width'));
         }
     }
 
@@ -61,8 +62,9 @@ export class FocusService {
      * @param {string} direction - 'up', 'down', 'left', or 'right'.
      */
     moveActiveCell(direction) {
-        const { activeCell } = this.uiService.getState();
-        const items = this.quoteService.getItems();
+        const { ui, quoteData } = this.stateService.getState();
+        const { activeCell } = ui;
+        const items = quoteData.products[quoteData.currentProduct].items;
         let { rowIndex } = activeCell;
         let { column } = activeCell;
         
@@ -77,15 +79,14 @@ export class FocusService {
         }
         
         column = navigableColumns[columnIndex];
-        this.uiService.setActiveCell(rowIndex, column);
-        // [FIX] Corrected the method name to match the refactored UIService API.
-        this.uiService.clearMultiSelectSelection();
+        this.stateService.dispatch(uiActions.setActiveCell(rowIndex, column));
+        this.stateService.dispatch(uiActions.clearMultiSelectSelection());
         
         const currentItem = items[rowIndex];
         if (currentItem && (column === 'width' || column === 'height')) {
-            this.uiService.setInputValue(currentItem[column]);
+            this.stateService.dispatch(uiActions.setInputValue(currentItem[column]));
         } else {
-            this.uiService.setInputValue('');
+            this.stateService.dispatch(uiActions.setInputValue(''));
         }
     }
 }

@@ -1,17 +1,18 @@
 // File: 04-core-code/ui/views/quick-quote-view.js
 
 import { EVENTS } from '../../config/constants.js';
+import * as uiActions from '../../actions/ui-actions.js';
+import * as quoteActions from '../../actions/quote-actions.js';
 
 /**
  * @fileoverview View module responsible for all logic related to the Quick Quote screen.
  */
 export class QuickQuoteView {
-    constructor({ quoteService, calculationService, focusService, fileService, uiService, eventAggregator, productFactory, configManager, publishStateChangeCallback }) {
-        this.quoteService = quoteService;
+    constructor({ stateService, calculationService, focusService, fileService, eventAggregator, productFactory, configManager, publishStateChangeCallback }) {
+        this.stateService = stateService;
         this.calculationService = calculationService;
         this.focusService = focusService;
         this.fileService = fileService;
-        this.uiService = uiService;
         this.eventAggregator = eventAggregator;
         this.productFactory = productFactory;
         this.configManager = configManager;
@@ -19,8 +20,14 @@ export class QuickQuoteView {
         this.currentProduct = 'rollerBlind';
     }
 
+    _getItems() {
+        const { quoteData } = this.stateService.getState();
+        const productKey = quoteData.currentProduct;
+        return quoteData.products[productKey] ? quoteData.products[productKey].items : [];
+    }
+
     handleSequenceCellClick({ rowIndex }) {
-        const items = this.quoteService.getItems();
+        const items = this._getItems();
         const item = items[rowIndex];
         const isLastRowEmpty = (rowIndex === items.length - 1) && (!item.width && !item.height);
 
@@ -29,12 +36,13 @@ export class QuickQuoteView {
             return;
         }
         
-        this.uiService.toggleMultiSelectSelection(rowIndex);
+        this.stateService.dispatch(uiActions.toggleMultiSelectSelection(rowIndex));
         this.publish();
     }
 
     handleDeleteRow() {
-        const { multiSelectSelectedIndexes } = this.uiService.getState();
+        const { ui } = this.stateService.getState();
+        const { multiSelectSelectedIndexes } = ui;
 
         if (multiSelectSelectedIndexes.length > 1) {
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Only one item can be deleted at a time.', type: 'error' });
@@ -47,10 +55,10 @@ export class QuickQuoteView {
         }
 
         const selectedIndex = multiSelectSelectedIndexes[0];
-        this.quoteService.deleteRow(selectedIndex);
+        this.stateService.dispatch(quoteActions.deleteRow(selectedIndex));
         
-        this.uiService.clearMultiSelectSelection();
-        this.uiService.setSumOutdated(true);
+        this.stateService.dispatch(uiActions.clearMultiSelectSelection());
+        this.stateService.dispatch(uiActions.setSumOutdated(true));
         this.focusService.focusAfterDelete();
         
         this.publish();
@@ -58,7 +66,8 @@ export class QuickQuoteView {
     }
 
     handleInsertRow() {
-        const { multiSelectSelectedIndexes } = this.uiService.getState();
+        const { ui } = this.stateService.getState();
+        const { multiSelectSelectedIndexes } = ui;
 
         if (multiSelectSelectedIndexes.length > 1) {
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'A new item can only be inserted below a single selection.', type: 'error' });
@@ -71,7 +80,7 @@ export class QuickQuoteView {
         }
 
         const selectedIndex = multiSelectSelectedIndexes[0];
-        const items = this.quoteService.getItems();
+        const items = this._getItems();
         const isLastRow = selectedIndex === items.length - 1;
 
         if (isLastRow) {
@@ -85,18 +94,19 @@ export class QuickQuoteView {
             return;
         }
         
-        const newRowIndex = this.quoteService.insertRow(selectedIndex);
-        this.uiService.setActiveCell(newRowIndex, 'width');
-        this.uiService.clearMultiSelectSelection();
+        this.stateService.dispatch(quoteActions.insertRow(selectedIndex));
+        // The rowIndex of the new row is selectedIndex + 1
+        this.stateService.dispatch(uiActions.setActiveCell(selectedIndex + 1, 'width'));
+        this.stateService.dispatch(uiActions.clearMultiSelectSelection());
         this.publish();
         this.eventAggregator.publish(EVENTS.OPERATION_SUCCESSFUL_AUTO_HIDE_PANEL);
     }
 
     handleNumericKeyPress({ key }) {
         if (!isNaN(parseInt(key))) {
-            this.uiService.appendInputValue(key);
+            this.stateService.dispatch(uiActions.appendInputValue(key));
         } else if (key === 'DEL') {
-            this.uiService.deleteLastInputChar();
+            this.stateService.dispatch(uiActions.deleteLastInputChar());
         } else if (key === 'W' || key === 'H') {
             this.focusService.focusFirstEmptyCell(key === 'W' ? 'width' : 'height');
         } else if (key === 'ENT') {
@@ -107,7 +117,8 @@ export class QuickQuoteView {
     }
 
     _commitValue() {
-        const { inputValue, inputMode, activeCell } = this.uiService.getState();
+        const { ui } = this.stateService.getState();
+        const { inputValue, inputMode, activeCell } = ui;
         const value = inputValue === '' ? null : parseInt(inputValue, 10);
         const productStrategy = this.productFactory.getProductStrategy(this.currentProduct);
         const validationRules = productStrategy.getValidationRules();
@@ -115,24 +126,24 @@ export class QuickQuoteView {
 
         if (rule && value !== null && (isNaN(value) || value < rule.min || value > rule.max)) {
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: `${rule.name} must be between ${rule.min} and ${rule.max}.`, type: 'error' });
-            this.uiService.clearInputValue();
+            this.stateService.dispatch(uiActions.clearInputValue());
             this.publish();
             return;
         }
-        this.quoteService.updateItemValue(activeCell.rowIndex, activeCell.column, value);
-        this.uiService.setSumOutdated(true);
+        this.stateService.dispatch(quoteActions.updateItemValue(activeCell.rowIndex, activeCell.column, value));
+        this.stateService.dispatch(uiActions.setSumOutdated(true));
         this.focusService.focusAfterCommit();
     }
 
     handleSaveToFile() {
-        const quoteData = this.quoteService.getQuoteData();
+        const { quoteData } = this.stateService.getState();
         const result = this.fileService.saveToJson(quoteData);
         const notificationType = result.success ? 'info' : 'error';
         this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: result.message, type: notificationType });
     }
 
     handleExportCSV() {
-        const quoteData = this.quoteService.getQuoteData();
+        const { quoteData } = this.stateService.getState();
         const result = this.fileService.exportToCsv(quoteData);
         const notificationType = result.success ? 'info' : 'error';
         this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: result.message, type: notificationType });
@@ -140,14 +151,15 @@ export class QuickQuoteView {
     
     handleReset() {
         if (window.confirm("This will clear all data. Are you sure?")) {
-            this.quoteService.reset();
-            this.uiService.reset();
+            this.stateService.dispatch(quoteActions.resetQuoteData());
+            this.stateService.dispatch(uiActions.resetUi());
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Quote has been reset.' });
         }
     }
     
     handleClearRow() {
-        const { multiSelectSelectedIndexes } = this.uiService.getState();
+        const { ui } = this.stateService.getState();
+        const { multiSelectSelectedIndexes } = ui;
 
         if (multiSelectSelectedIndexes.length !== 1) {
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { 
@@ -168,9 +180,9 @@ export class QuickQuoteView {
                         type: 'button', 
                         text: 'Clear Fields (W,H,Type)', 
                         callback: () => {
-                            this.quoteService.clearRow(selectedIndex);
-                            this.uiService.clearMultiSelectSelection();
-                            this.uiService.setSumOutdated(true);
+                            this.stateService.dispatch(quoteActions.clearRow(selectedIndex));
+                            this.stateService.dispatch(uiActions.clearMultiSelectSelection());
+                            this.stateService.dispatch(uiActions.setSumOutdated(true));
                             this.focusService.focusAfterClear();
                             this.publish();
                         } 
@@ -179,9 +191,9 @@ export class QuickQuoteView {
                         type: 'button', 
                         text: 'Delete Row', 
                         callback: () => {
-                            this.quoteService.deleteRow(selectedIndex);
-                            this.uiService.clearMultiSelectSelection();
-                            this.uiService.setSumOutdated(true);
+                            this.stateService.dispatch(quoteActions.deleteRow(selectedIndex));
+                            this.stateService.dispatch(uiActions.clearMultiSelectSelection());
+                            this.stateService.dispatch(uiActions.setSumOutdated(true));
                             this.focusService.focusAfterDelete();
                             this.publish();
                         } 
@@ -203,29 +215,29 @@ export class QuickQuoteView {
     }
     
     handleTableCellClick({ rowIndex, column }) {
-        const item = this.quoteService.getItems()[rowIndex];
+        const item = this._getItems()[rowIndex];
         if (!item) return;
         
-        this.uiService.clearMultiSelectSelection();
+        this.stateService.dispatch(uiActions.clearMultiSelectSelection());
 
         if (column === 'width' || column === 'height') {
-            this.uiService.setActiveCell(rowIndex, column);
-            this.uiService.setInputValue(item[column]);
+            this.stateService.dispatch(uiActions.setActiveCell(rowIndex, column));
+            this.stateService.dispatch(uiActions.setInputValue(item[column]));
         } else if (column === 'TYPE') {
-            this.uiService.setActiveCell(rowIndex, column);
-            this.quoteService.cycleItemType(rowIndex);
-            this.uiService.setSumOutdated(true);
+            this.stateService.dispatch(uiActions.setActiveCell(rowIndex, column));
+            this.stateService.dispatch(quoteActions.cycleItemType(rowIndex));
+            this.stateService.dispatch(uiActions.setSumOutdated(true));
         }
         this.publish();
     }
     
     handleCycleType() {
-        const items = this.quoteService.getItems();
+        const items = this._getItems();
         const eligibleItems = items.filter(item => item.width && item.height);
         if (eligibleItems.length === 0) return;
         
-        this.quoteService.batchUpdateFabricType();
-        this.uiService.setSumOutdated(true);
+        this.stateService.dispatch(quoteActions.batchUpdateFabricType());
+        this.stateService.dispatch(uiActions.setSumOutdated(true));
     }
 
     _showFabricTypeDialog(callback, dialogTitle = 'Select a fabric type:') {
@@ -255,28 +267,29 @@ export class QuickQuoteView {
     }
 
     handleTypeCellLongPress({ rowIndex }) {
-        const item = this.quoteService.getItems()[rowIndex];
+        const item = this._getItems()[rowIndex];
         if (!item || (!item.width && !item.height)) {
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Cannot set type for an empty row.', type: 'error' });
             return;
         }
         this._showFabricTypeDialog((newType) => {
-            this.quoteService.setItemType(rowIndex, newType);
-            this.uiService.setSumOutdated(true);
+            this.stateService.dispatch(quoteActions.setItemType(rowIndex, newType));
+            this.stateService.dispatch(uiActions.setSumOutdated(true));
             return true;
         }, `Set fabric type for Row #${rowIndex + 1}:`);
     }
 
     handleTypeButtonLongPress() {
         this._showFabricTypeDialog((newType) => {
-            this.quoteService.batchUpdateFabricType(newType);
-            this.uiService.setSumOutdated(true);
+            this.stateService.dispatch(quoteActions.batchUpdateFabricType(newType));
+            this.stateService.dispatch(uiActions.setSumOutdated(true));
             return true;
         }, 'Set fabric type for ALL rows:');
     }
 
     handleMultiTypeSet() {
-        const { multiSelectSelectedIndexes } = this.uiService.getState();
+        const { ui } = this.stateService.getState();
+        const { multiSelectSelectedIndexes } = ui;
 
         if (multiSelectSelectedIndexes.length <= 1) {
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Please select multiple items first.', type: 'error' });
@@ -285,26 +298,26 @@ export class QuickQuoteView {
 
         const title = `Set fabric type for ${multiSelectSelectedIndexes.length} selected rows:`;
         this._showFabricTypeDialog((newType) => {
-            this.quoteService.batchUpdateFabricTypeForSelection(multiSelectSelectedIndexes, newType);
-            this.uiService.clearMultiSelectSelection();
-            this.uiService.setSumOutdated(true);
+            this.stateService.dispatch(quoteActions.batchUpdateFabricTypeForSelection(multiSelectSelectedIndexes, newType));
+            this.stateService.dispatch(uiActions.clearMultiSelectSelection());
+            this.stateService.dispatch(uiActions.setSumOutdated(true));
             return true;
         }, title);
     }
 
     handleCalculateAndSum() {
-        const currentQuoteData = this.quoteService.getQuoteData();
+        const { quoteData } = this.stateService.getState();
         const productStrategy = this.productFactory.getProductStrategy(this.currentProduct);
-        const { updatedQuoteData, firstError } = this.calculationService.calculateAndSum(currentQuoteData, productStrategy);
+        const { updatedQuoteData, firstError } = this.calculationService.calculateAndSum(quoteData, productStrategy);
 
-        this.quoteService.setQuoteData(updatedQuoteData);
+        this.stateService.dispatch(quoteActions.setQuoteData(updatedQuoteData));
 
         if (firstError) {
-            this.uiService.setSumOutdated(true);
+            this.stateService.dispatch(uiActions.setSumOutdated(true));
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: firstError.message, type: 'error' });
-            this.uiService.setActiveCell(firstError.rowIndex, firstError.column);
+            this.stateService.dispatch(uiActions.setActiveCell(firstError.rowIndex, firstError.column));
         } else {
-            this.uiService.setSumOutdated(false);
+            this.stateService.dispatch(uiActions.setSumOutdated(false));
         }
     }
 

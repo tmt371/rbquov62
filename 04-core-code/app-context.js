@@ -64,13 +64,6 @@ export class AppContext {
         });
         this.register('stateService', stateService);
 
-        const quoteService = new QuoteService({
-            stateService,
-            productFactory,
-            configManager
-        });
-        this.register('quoteService', quoteService);
-
         const calculationService = new CalculationService({
             stateService,
             productFactory,
@@ -81,23 +74,18 @@ export class AppContext {
         const fileService = new FileService({ productFactory });
         this.register('fileService', fileService);
 
-        const uiService = new UIService({ stateService });
-        this.register('uiService', uiService);
-
         const focusService = new FocusService({
-            stateService,
-            uiService,
-            quoteService
+            stateService
         });
         this.register('focusService', focusService);
 
         const publishStateChangeCallback = () => eventAggregator.publish('stateChanged', this.get('appController')._getFullState());
 
-        const k1LocationView = new K1LocationView({ quoteService, uiService, publishStateChangeCallback });
-        const k2FabricView = new K2FabricView({ quoteService, uiService, eventAggregator, publishStateChangeCallback });
-        const k3OptionsView = new K3OptionsView({ quoteService, uiService, publishStateChangeCallback });
-        const dualChainView = new DualChainView({ quoteService, uiService, calculationService, eventAggregator, publishStateChangeCallback });
-        const driveAccessoriesView = new DriveAccessoriesView({ quoteService, uiService, calculationService, eventAggregator, publishStateChangeCallback });
+        const k1LocationView = new K1LocationView({ stateService, publishStateChangeCallback });
+        const k2FabricView = new K2FabricView({ stateService, eventAggregator, publishStateChangeCallback });
+        const k3OptionsView = new K3OptionsView({ stateService, publishStateChangeCallback });
+        const dualChainView = new DualChainView({ stateService, calculationService, eventAggregator, publishStateChangeCallback });
+        const driveAccessoriesView = new DriveAccessoriesView({ stateService, calculationService, eventAggregator, publishStateChangeCallback });
 
         this.register('k1LocationView', k1LocationView);
         this.register('k2FabricView', k2FabricView);
@@ -106,8 +94,7 @@ export class AppContext {
         this.register('driveAccessoriesView', driveAccessoriesView);
 
         const detailConfigView = new DetailConfigView({
-            quoteService,
-            uiService,
+            stateService,
             calculationService,
             eventAggregator,
             publishStateChangeCallback,
@@ -122,8 +109,6 @@ export class AppContext {
         const workflowService = new WorkflowService({
             eventAggregator,
             stateService,
-            uiService,
-            quoteService,
             fileService,
             calculationService,
             productFactory,
@@ -132,11 +117,10 @@ export class AppContext {
         this.register('workflowService', workflowService);
 
         const quickQuoteView = new QuickQuoteView({
-            quoteService,
+            stateService,
             calculationService,
             focusService,
             fileService,
-            uiService,
             eventAggregator,
             productFactory,
             configManager,
@@ -161,11 +145,9 @@ import { ConfigManager } from './config-manager.js';
 import { AppController } from './app-controller.js';
 import { ProductFactory } from './strategies/product-factory.js';
 import { StateService } from './services/state-service.js';
-import { QuoteService } from './services/quote-service.js';
 import { CalculationService } from './services/calculation-service.js';
 import { FocusService } from './services/focus-service.js';
 import { FileService } from './services/file-service.js';
-import { UIService } from './services/ui-service.js';
 import { WorkflowService } from './services/workflow-service.js';
 import { QuickQuoteView } from './ui/views/quick-quote-view.js';
 import { DetailConfigView } from './ui/views/detail-config-view.js';

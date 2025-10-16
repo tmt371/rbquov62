@@ -1,14 +1,15 @@
 // File: 04-core-code/ui/views/k2-fabric-view.js
 
 import { EVENTS } from '../../config/constants.js';
+import * as uiActions from '../../actions/ui-actions.js';
+import * as quoteActions from '../../actions/quote-actions.js';
 
 /**
  * @fileoverview A dedicated sub-view for handling all logic related to the K2 (Fabric) tab.
  */
 export class K2FabricView {
-    constructor({ quoteService, uiService, eventAggregator, publishStateChangeCallback }) {
-        this.quoteService = quoteService;
-        this.uiService = uiService;
+    constructor({ stateService, eventAggregator, publishStateChangeCallback }) {
+        this.stateService = stateService;
         this.eventAggregator = eventAggregator;
         this.publish = publishStateChangeCallback;
         
@@ -17,14 +18,23 @@ export class K2FabricView {
         console.log("K2FabricView Initialized.");
     }
 
+    _getState() {
+        return this.stateService.getState();
+    }
+
+    _getItems() {
+        const { quoteData } = this._getState();
+        return quoteData.products[quoteData.currentProduct].items;
+    }
+
     handleFocusModeRequest() {
-        const currentMode = this.uiService.getState().activeEditMode;
+        const { ui } = this._getState();
+        const currentMode = ui.activeEditMode;
         const newMode = currentMode === 'K2' ? null : 'K2';
 
         if (newMode) {
-            const items = this.quoteService.getItems();
-            // [REFACTORED] lfModifiedRowIndexes is now read from quoteData.
-            const { lfModifiedRowIndexes } = this.quoteService.getQuoteData().uiMetadata;
+            const items = this._getItems();
+            const { lfModifiedRowIndexes } = this._getState().quoteData.uiMetadata;
             const eligibleTypes = ['B2', 'B3', 'B4'];
             
             const hasConflict = items.some((item, index) => 
@@ -47,8 +57,7 @@ export class K2FabricView {
                             { 
                                 type: 'button', text: 'Keep Existing (Skip L-Filter)', 
                                 callback: () => {
-                                    // [REFACTORED] lfModifiedRowIndexes is now read from quoteData.
-                                    this.indexesToExcludeFromBatchUpdate = new Set(this.quoteService.getQuoteData().uiMetadata.lfModifiedRowIndexes);
+                                    this.indexesToExcludeFromBatchUpdate = new Set(this._getState().quoteData.uiMetadata.lfModifiedRowIndexes);
                                     this._enterFCMode(false);
                                 }
                             },
@@ -66,9 +75,8 @@ export class K2FabricView {
 
     _enterFCMode(isOverwriting) {
         if (isOverwriting) {
-            const items = this.quoteService.getItems();
-            // [REFACTORED] lfModifiedRowIndexes is now read from quoteData.
-            const { lfModifiedRowIndexes } = this.quoteService.getQuoteData().uiMetadata;
+            const items = this._getItems();
+            const { lfModifiedRowIndexes } = this._getState().quoteData.uiMetadata;
             const indexesToClear = [];
             const eligibleTypes = ['B2', 'B3', 'B4'];
             items.forEach((item, index) => {
@@ -77,24 +85,20 @@ export class K2FabricView {
                 }
             });
             if (indexesToClear.length > 0) {
-                // [REFACTORED] Call moved from uiService to quoteService.
-                this.quoteService.removeLFModifiedRows(indexesToClear);
+                this.stateService.dispatch(quoteActions.removeLFModifiedRows(indexesToClear));
             }
         }
-        this.uiService.setActiveEditMode('K2');
+        this.stateService.dispatch(uiActions.setActiveEditMode('K2'));
         this._updatePanelInputsState(); 
-        this.uiService.setActiveCell(null, null);
-        this.publish();
+        this.stateService.dispatch(uiActions.setActiveCell(null, null));
     }
 
     handlePanelInputBlur({ type, field, value }) {
         if (type === 'LF') {
             this._applyLFChanges();
         } else {
-            this.quoteService.batchUpdatePropertyByType(type, field, value, this.indexesToExcludeFromBatchUpdate);
+            this.stateService.dispatch(quoteActions.batchUpdatePropertyByType(type, field, value, this.indexesToExcludeFromBatchUpdate));
         }
-        
-        this.publish();
     }
 
     handlePanelInputEnter() {
@@ -107,7 +111,7 @@ export class K2FabricView {
             nextInput.focus();
             nextInput.select();
         } else {
-            if (activeElement.dataset.type === 'LF' || (activeElement.dataset.type !== 'LF' && this.uiService.getState().activeEditMode === 'K2')) {
+            if (activeElement.dataset.type === 'LF' || (activeElement.dataset.type !== 'LF' && this._getState().ui.activeEditMode === 'K2')) {
                 this._applyLFChanges();
             }
             this._exitAllK2Modes();
@@ -115,14 +119,13 @@ export class K2FabricView {
     }
 
     handleSequenceCellClick({ rowIndex }) {
-        const { activeEditMode } = this.uiService.getState();
+        const { activeEditMode } = this._getState().ui;
 
         if (activeEditMode === 'K2_LF_SELECT' || activeEditMode === 'K2_LF_DELETE_SELECT') {
-            const item = this.quoteService.getItems()[rowIndex];
+            const item = this._getItems()[rowIndex];
             
             if (activeEditMode === 'K2_LF_DELETE_SELECT') {
-                // [REFACTORED] lfModifiedRowIndexes is now read from quoteData.
-                const { lfModifiedRowIndexes } = this.quoteService.getQuoteData().uiMetadata;
+                const { lfModifiedRowIndexes } = this._getState().quoteData.uiMetadata;
                 if (!lfModifiedRowIndexes.includes(rowIndex)) {
                     this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Only items with a Light-Filter setting (pink background) can be selected for deletion.', type: 'error' });
                     return;
@@ -134,11 +137,11 @@ export class K2FabricView {
                 this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Only items with TYPE "B2", "B3", or "B4" can be selected.', type: 'error' });
                 return;
             }
-            this.uiService.toggleLFSelection(rowIndex);
+            this.stateService.dispatch(uiActions.toggleLFSelection(rowIndex));
             
             if (activeEditMode === 'K2_LF_SELECT') {
                 this._updatePanelInputsState();
-                const { lfSelectedRowIndexes } = this.uiService.getState();
+                const { lfSelectedRowIndexes } = this._getState().ui;
                 if (lfSelectedRowIndexes.length > 0) {
                     setTimeout(() => {
                         const fnameInput = document.querySelector('input[data-type="LF"][data-field="fabric"]');
@@ -149,71 +152,65 @@ export class K2FabricView {
                     }, 50);
                 }
             }
-            this.publish();
         }
     }
 
     handleLFEditRequest() {
-        const { activeEditMode } = this.uiService.getState();
+        const { activeEditMode } = this._getState().ui;
         
         if (activeEditMode === 'K2_LF_SELECT') {
             this._applyLFChanges();
             this._exitAllK2Modes();
         } else {
-            this.uiService.setActiveEditMode('K2_LF_SELECT');
+            this.stateService.dispatch(uiActions.setActiveEditMode('K2_LF_SELECT'));
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Please select items with TYPE \'B2\', \'B3\', or \'B4\' to edit.' });
-            this.publish();
         }
     }
 
     handleLFDeleteRequest() {
-        const { activeEditMode } = this.uiService.getState();
+        const { activeEditMode } = this._getState().ui;
         
         if (activeEditMode === 'K2_LF_DELETE_SELECT') {
-            const { lfSelectedRowIndexes } = this.uiService.getState();
+            const { lfSelectedRowIndexes } = this._getState().ui;
             if (lfSelectedRowIndexes.length > 0) {
-                this.quoteService.removeLFProperties(lfSelectedRowIndexes);
-                // [REFACTORED] Call moved from uiService to quoteService.
-                this.quoteService.removeLFModifiedRows(lfSelectedRowIndexes);
+                this.stateService.dispatch(quoteActions.removeLFProperties(lfSelectedRowIndexes));
+                this.stateService.dispatch(quoteActions.removeLFModifiedRows(lfSelectedRowIndexes));
                 this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Light-Filter settings have been cleared.' });
             }
             this._exitAllK2Modes();
         } else {
-            this.uiService.setActiveEditMode('K2_LF_DELETE_SELECT');
+            this.stateService.dispatch(uiActions.setActiveEditMode('K2_LF_DELETE_SELECT'));
             this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Please select the roller blinds for which you want to cancel the Light-Filter fabric setting. After selection, click the LF-Del button again.' });
-            this.publish();
         }
     }
 
     _exitAllK2Modes() {
-        this.uiService.setActiveEditMode(null);
-        // [FIX] Corrected the method name to match the refactored UIService API.
-        this.uiService.clearMultiSelectSelection();
-        this.uiService.clearLFSelection();
+        this.stateService.dispatch(uiActions.setActiveEditMode(null));
+        this.stateService.dispatch(uiActions.clearMultiSelectSelection());
+        this.stateService.dispatch(uiActions.clearLFSelection());
         
         this.indexesToExcludeFromBatchUpdate.clear();
 
         this._updatePanelInputsState();
-        this.publish();
     }
 
     _applyLFChanges() {
-        const { lfSelectedRowIndexes } = this.uiService.getState();
+        const { lfSelectedRowIndexes } = this._getState().ui;
         if (lfSelectedRowIndexes.length === 0) return;
 
         const fNameInput = document.querySelector('input[data-type="LF"][data-field="fabric"]');
         const fColorInput = document.querySelector('input[data-type="LF"][data-field="color"]');
         
         if (fNameInput && fColorInput && fNameInput.value && fColorInput.value) {
-            this.quoteService.batchUpdateLFProperties(lfSelectedRowIndexes, fNameInput.value, fColorInput.value);
-            // [REFACTORED] Call moved from uiService to quoteService.
-            this.quoteService.addLFModifiedRows(lfSelectedRowIndexes);
+            this.stateService.dispatch(quoteActions.batchUpdateLFProperties(lfSelectedRowIndexes, fNameInput.value, fColorInput.value));
+            this.stateService.dispatch(quoteActions.addLFModifiedRows(lfSelectedRowIndexes));
         }
     }
 
     _updatePanelInputsState() {
-        const { activeEditMode, lfSelectedRowIndexes } = this.uiService.getState();
-        const items = this.quoteService.getItems();
+        const { ui } = this._getState();
+        const { activeEditMode, lfSelectedRowIndexes } = ui;
+        const items = this._getItems();
         const presentTypes = new Set(items.map(item => item.fabricType).filter(Boolean));
         
         const allPanelInputs = document.querySelectorAll('.panel-input');
@@ -263,6 +260,6 @@ export class K2FabricView {
     }
     
     activate() {
-        this.uiService.setVisibleColumns(['sequence', 'fabricTypeDisplay', 'fabric', 'color']);
+        this.stateService.dispatch(uiActions.setVisibleColumns(['sequence', 'fabricTypeDisplay', 'fabric', 'color']));
     }
 }

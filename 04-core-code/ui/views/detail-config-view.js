@@ -4,11 +4,9 @@
  * @fileoverview A "Manager" view that delegates logic to specific sub-views for each tab.
  */
 
-// [HOTFIX] Added the missing 'export' keyword to the class declaration.
 export class DetailConfigView {
     constructor({ 
-        quoteService, 
-        uiService, 
+        stateService, 
         calculationService, 
         eventAggregator, 
         publishStateChangeCallback,
@@ -19,8 +17,7 @@ export class DetailConfigView {
         driveAccessoriesView,
         dualChainView
     }) {
-        this.quoteService = quoteService;
-        this.uiService = uiService;
+        this.stateService = stateService;
         this.calculationService = calculationService;
         this.eventAggregator = eventAggregator;
         this.publish = publishStateChangeCallback;
@@ -36,7 +33,7 @@ export class DetailConfigView {
     }
 
     activateTab(tabId) {
-        this.uiService.setActiveTab(tabId);
+        this.stateService.dispatch({ type: 'ui/setActiveTab', payload: { tabId } });
 
         switch (tabId) {
             case 'k1-tab':
@@ -87,7 +84,8 @@ export class DetailConfigView {
     }
 
     handleSequenceCellClick({ rowIndex }) {
-        const { activeEditMode } = this.uiService.getState();
+        const { ui } = this.stateService.getState();
+        const { activeEditMode } = ui;
         if (activeEditMode === 'K2_LF_SELECT' || activeEditMode === 'K2_LF_DELETE_SELECT') {
             this.k2View.handleSequenceCellClick({ rowIndex });
         }
@@ -128,10 +126,9 @@ export class DetailConfigView {
     }
 
     handleTableCellClick({ rowIndex, column }) {
-        // [FIX] Correctly destructure 'driveAccessoryMode' instead of the non-existent 'driveAccessoriesView' from state.
-        const { activeEditMode, dualChainMode, driveAccessoryMode } = this.uiService.getState();
+        const { ui } = this.stateService.getState();
+        const { activeEditMode, dualChainMode, driveAccessoryMode } = ui;
         
-        // [FIX] The condition now correctly checks the 'driveAccessoryMode' state property to see if a K4 mode is active.
         if (driveAccessoryMode) {
             this.driveAccessoriesView.handleTableCellClick({ rowIndex, column });
             return;
