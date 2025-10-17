@@ -1,101 +1,137 @@
 /* /04-core-code/ui/css/f1-grid.css */
 
-.f1-container {
+.f1-grid {
     display: grid;
-    /* 欄位: A (標籤), B (數量/標籤), C (金額) */
-    grid-template-columns: 1.2fr 0.8fr 1fr;
-    gap: 12px 10px; /* 增加垂直間距 */
-    align-items: center;
-}
-
-/* --- 通用格位樣式 --- */
-.f1-container .grid-cell {
-    min-height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start; /* 預設靠左對齊 */
-}
-
-/* 跨欄設定 */
-.f1-container .grid-span-2 { grid-column: span 2; }
-.f1-container .grid-span-3 { grid-column: span 3; }
-.f1-container .grid-col-start-2 { grid-column-start: 2; }
-
-
-/* --- 區塊外框群組 --- */
-.component-cost-group,
-.rb-pricing-group,
-.final-summary-group {
-    grid-column: 1 / -1;
-    border-radius: 8px;
-    padding: 15px;
-    display: grid;
-    grid-template-columns: subgrid;
+    grid-template-columns: 1.2fr 0.8fr 1fr; /* Item | Qty | $ */
     gap: 8px 10px;
+    align-items: center;
 }
 
-.component-cost-group {
-    border: 2px solid #6B8E23; 
-    background-color: #f9f9f9;
-}
-
-.rb-pricing-group {
-    border: 2px solid #87CEEB; /* SkyBlue */
-    background-color: #f0f8ff; /* AliceBlue */
-}
-
-.final-summary-group {
-    border: 2px solid #DC143C; /* Crimson */
-    background-color: #fffafa; /* Snow */
-}
-
-/* --- 物件樣式 --- */
-.qty-box, .price-box, .input-box {
-    width: 100%;
-    min-height: 30px;
-    border: 1px solid #000000;
-    background-color: #ffffff;
-    border-radius: 4px;
-    box-sizing: border-box;
+.f1-grid-cell {
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: center;
+    min-height: 28px; /* Set a minimum height for all cells */
     display: flex;
     align-items: center;
-    padding: 0 8px;
-    font-family: "Menlo", "Consolas", monospace;
+    justify-content: center;
 }
-#f1-rb-discount-input {
-    border: 1px solid #000000;
+
+/* --- Headers --- */
+.f1-main-header {
+    grid-column: 1 / -1;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--panel-border-color);
+    padding-bottom: 4px;
+    margin-bottom: 5px;
+    justify-content: flex-start;
+}
+
+.f1-col-header {
+    font-weight: bold;
+    color: #1f2937;
+    background-color: #e5e7eb;
+    border-radius: 3px;
+}
+
+/* --- Item Labels --- */
+.f1-item-label,
+.f1-group-label,
+.f1-sub-item-label,
+.f1-total-label {
+    text-align: left;
+    justify-content: flex-start;
+    padding-left: 5px;
+    font-weight: 500;
+}
+
+.f1-group-label {
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+.f1-sub-item-label {
+    padding-left: 20px; /* Indent sub-items */
+}
+
+/* --- Qty Cells --- */
+.f1-input-qty {
+    background-color: #dbeafe; /* Light Blue background for input */
+    border: 1px solid #93c5fd;
     border-radius: 4px;
+    padding: 5px;
+    width: 100%;
     box-sizing: border-box;
+    text-align: center;
+    font-family: "Menlo", "Consolas", monospace;
+    min-height: 30px;
+}
+
+.f1-qty-display {
+    background-color: #ffffff; /* White background for display-only Qty */
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+    font-family: "Menlo", "Consolas", monospace;
+    min-height: 30px;
 }
 
 
-.qty-box { justify-content: center; }
-.price-box { justify-content: flex-end; font-weight: bold; }
-.input-box { justify-content: center; font-weight: bold; }
-
-/* --- 顏色設定 --- */
-.bg-bright-green { background-color: #dcfce7; border-color: #86efac; }
-.bg-light-purple { background-color: #E6E6FA; border-color: #b19cd9; }
-.bg-pink { background-color: #FFF0F5; border-color: #ffb6c1; }
-
-/* 特殊文字對齊與樣式 */
-.text-right { justify-content: flex-end; }
-.font-bold { font-weight: bold; }
-
-/* --- 交錯背景 + 左側邊框 --- */
-.group-row {
-    grid-column: 1 / -1; /* 讓背景色橫跨三欄 */
-    display: grid;
-    grid-template-columns: subgrid; /* 繼承父層網格 */
-    background-color: #f8f8f8;
-    margin: -4px -15px; /* 抵銷父層的 padding 和部分 gap */
-    padding: 4px 15px;
+/* --- Price Cells --- */
+.f1-price-display {
+    background-color: #dcfce7; /* Green background */
+    border: 1px solid #86efac;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: flex-end;
+    padding-right: 8px;
+    font-family: "Menlo", "Consolas", monospace;
+    min-height: 30px;
+    font-weight: bold;
 }
 
-.group-row-dual {
-    border-left: 3px solid #3b82f6; /* 藍色邊框 */
+/* --- Spacers & Totals --- */
+.f1-spacer {
+    height: 1px;
+    background-color: #9ca3af;
+    margin: 8px 0;
+    min-height: 1px;
 }
 
-.group-row-remote {
-    border-left: 3px solid #f97316; /* 橘色邊框 */
+.f1-total-label {
+    font-weight: bold;
+}
+
+.f1-section-total {
+    font-weight: bold;
+    background-color: #c7d2fe; /* Indigo light */
+    border-color: #a5b4fc;
+}
+
+.f1-grand-total-label {
+    font-size: 1.1em;
+}
+
+.f1-grand-total {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #be123c; /* Rose-700 */
+    background-color: #fecaca; /* Red-200 */
+    border-color: #f87171;
+}
+
+/* Hide Number Input Spinners */
+.f1-input-qty[type=number]::-webkit-outer-spin-button,
+.f1-input-qty[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.f1-input-qty[type=number] {
+  -moz-appearance: textfield;
 }
