@@ -10,7 +10,7 @@ export class ConfigManager {
         this.accessories = null;
         this.f2Config = f2Config || {};
         this.fabricTypeSequence = null;
-        this.businessRules = null; 
+        this.businessRules = null; // [ADDED] Initialize property for business rules
         this.isInitialized = false;
     }
 
@@ -27,16 +27,13 @@ export class ConfigManager {
             this.priceMatrices = data.matrices;
             this.accessories = data.accessories;
             this.fabricTypeSequence = data.fabricTypeSequence || [];
-            this.businessRules = data.businessRules || {}; 
+            this.businessRules = data.businessRules || {}; // [ADDED] Load business rules from JSON
             this.isInitialized = true;
             console.log("ConfigManager initialized and price matrices loaded successfully.");
 
         } catch (error) {
             console.error("Failed to load price matrices:", error);
-            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, {
-                message: "Error: Could not load critical price data. The application may not function correctly.",
-                type: 'error'
-            });
+            this.eventAggregator.publish(EVENTS.SHOW_NOTIFICATION, { message: 'Error: Could not load the price list file!', type: 'error'});
         }
     }
 
@@ -45,10 +42,19 @@ export class ConfigManager {
             console.error("ConfigManager not initialized or matrices not loaded.");
             return null;
         }
+        
         const matrix = this.priceMatrices[fabricType];
+
         if (matrix && matrix.aliasFor) {
-            return this.priceMatrices[matrix.aliasFor];
+            const aliasTargetMatrix = this.priceMatrices[matrix.aliasFor];
+            if (aliasTargetMatrix) {
+                return { ...aliasTargetMatrix, name: matrix.name };
+            } else {
+                console.error(`Alias target '${matrix.aliasFor}' not found for fabric type '${fabricType}'.`);
+                return null;
+            }
         }
+        
         return matrix || null;
     }
 
@@ -77,16 +83,19 @@ export class ConfigManager {
         return this.f2Config;
     }
 
+    // [ADDED] New getter method for validation rules.
     getValidationRules(productType) {
         if (!this.isInitialized || !this.businessRules) return null;
         return this.businessRules.validation?.[productType] || null;
     }
 
+    // [ADDED] New getter method for logic thresholds.
     getLogicThresholds() {
         if (!this.isInitialized || !this.businessRules) return null;
         return this.businessRules.logic || null;
     }
 
+    // [ADDED] New getter method for accessory mappings.
     getAccessoryMappings() {
         if (!this.isInitialized || !this.businessRules) return { accessoryPriceKeyMap: {}, accessoryMethodNameMap: {} };
         return this.businessRules.mappings || { accessoryPriceKeyMap: {}, accessoryMethodNameMap: {} };
